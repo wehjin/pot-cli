@@ -1,0 +1,5 @@
+name: pot
+about: Manages assets
+subcommands:
+  - lot:
+      about: List, create, or delete lots
