@@ -3,7 +3,7 @@ use std::error::Error;
 
 use smarket::yf::PricingResult;
 
-use crate::{AssetType, disk, Ladder, Lot};
+use crate::{disk, Ladder, Lot};
 
 pub fn status(ladder: Ladder) -> Result<(), Box<dyn Error>> {
 	let lots = disk::read_lots()?;
@@ -72,7 +72,7 @@ pub fn init() -> Result<(), Box<dyn Error>> {
 fn counts(lots: &Vec<Lot>) -> HashMap<String, f64> {
 	let mut map: HashMap<String, f64> = HashMap::new();
 	for lot in lots {
-		let AssetType::Usx(ref symbol) = lot.asset_type;
+		let symbol = lot.asset_tag.as_str();
 		let previous = map.get(symbol).cloned().unwrap_or(0.0);
 		let next = previous + lot.share_count.as_f64();
 		map.insert(symbol.to_string(), next);

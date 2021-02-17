@@ -1,15 +1,17 @@
 use std::error::Error;
 
-use crate::{AssetType, Custodian, Lot, ShareCount};
+use crate::Lot;
+
+pub fn init() {}
 
 pub fn read_lots() -> Result<Vec<Lot>, Box<dyn Error>> {
-	let lots: Vec<Lot> = vec![Lot {
-		uid: 1,
-		share_count: ShareCount(100.0),
-		asset_type: AssetType::Usx("TSLA".to_string()),
-		custodian: Custodian("robinhood".to_string()),
-	}];
+	let mut lots: Vec<Lot> = Vec::new();
+	let mut rdr = csv::Reader::from_path("lots.csv")?;
+	for result in rdr.deserialize() {
+		let lot: Lot = result?;
+		lots.insert(0, lot);
+	}
+	lots.reverse();
 	Ok(lots)
 }
 
-pub fn init() {}

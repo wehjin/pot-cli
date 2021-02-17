@@ -1,5 +1,8 @@
 extern crate clap;
+extern crate csv;
 extern crate hex;
+extern crate rand;
+extern crate serde;
 extern crate smarket;
 
 use std::collections::HashMap;
@@ -7,17 +10,21 @@ use std::error::Error;
 use std::fmt;
 use std::fmt::Display;
 
+use serde::Deserialize;
+
+pub use lot::*;
+
+mod lot;
 mod disk;
 mod cli;
 
 fn main() -> Result<(), Box<dyn Error>> {
-
 	let ladder = Ladder {
 		assets: vec![
-			AssetType::Usx("SPCE".into()),
-			AssetType::Usx("GBTC".into()),
-			AssetType::Usx("PEP".into()),
-			AssetType::Usx("TSLA".into())
+			AssetTag("SPCE".into()),
+			AssetTag("GBTC".into()),
+			AssetTag("PEP".into()),
+			AssetTag("TSLA".into())
 		]
 	};
 
@@ -28,13 +35,12 @@ fn main() -> Result<(), Box<dyn Error>> {
 	} else if let Some(_) = matches.subcommand_matches("init") {
 		cli::init()?;
 	} else if let Some(_) = matches.subcommand_matches("status") {
-		cli::status( ladder)?;
+		cli::status(ladder)?;
 	} else {
 		eprintln!("No command found");
 	}
 	Ok(())
 }
-
 
 #[derive(Debug)]
 pub struct Holding {
@@ -44,14 +50,13 @@ pub struct Holding {
 
 #[derive(Debug)]
 pub struct Ladder {
-	pub assets: Vec<AssetType>
+	pub assets: Vec<AssetTag>
 }
 
 impl Ladder {
 	pub fn ordered_symbols(&self) -> Vec<String> {
 		self.assets.iter().map(|it| {
-			let AssetType::Usx(ref symbol) = it;
-			symbol.to_uppercase()
+			it.as_str().to_uppercase()
 		}).collect()
 	}
 	pub fn weights(&self) -> HashMap<String, f64> {
@@ -59,7 +64,7 @@ impl Ladder {
 			.iter()
 			.enumerate()
 			.map(|(i, asset_type)| {
-				let AssetType::Usx(ref symbol) = asset_type;
+				let symbol = asset_type.as_str();
 				(symbol.to_uppercase(), 1.618f64.powf(i as f64))
 			})
 			.collect::<HashMap<String, _>>()
@@ -73,33 +78,14 @@ impl Ladder {
 	}
 }
 
-#[derive(Clone, Debug)]
-pub enum AssetType { Usx(String) }
+#[derive(Clone, Debug, Deserialize)]
+pub struct AssetTag(String);
 
-impl AssetType {
-	pub fn name(&self) -> &str {
-		match self {
-			AssetType::Usx(name) => name
-		}
-	}
+impl AssetTag {
+	pub fn as_str(&self) -> &str { &self.0 }
 }
 
-#[derive(Clone, Debug)]
-pub struct Lot {
-	pub uid: u64,
-	pub share_count: ShareCount,
-	pub asset_type: AssetType,
-	pub custodian: Custodian,
-}
-
-impl Lot {
-	pub fn uid_pretty(&self) -> String {
-		hex::encode(self.uid.to_be_bytes())
-	}
-}
-
-
-#[derive(PartialOrd, PartialEq, Copy, Clone, Debug)]
+#[derive(PartialOrd, PartialEq, Copy, Clone, Debug, Deserialize)]
 pub struct ShareCount(f64);
 
 impl ShareCount {
@@ -112,7 +98,7 @@ impl Display for ShareCount {
 	}
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Deserialize)]
 pub struct Custodian(String);
 
 impl Custodian {
