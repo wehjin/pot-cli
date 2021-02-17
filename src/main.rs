@@ -11,7 +11,20 @@ fn main() -> Result<(), Box<dyn Error>> {
 	let yaml = clap::load_yaml!("cli.yaml");
 	let matches = clap::App::from(yaml).get_matches();
 	if let Some(_matches) = matches.subcommand_matches("lots") {
-		lots_main()
+		let lots: Vec<Lot> = vec![Lot {
+			uid: 1,
+			share_count: ShareCount(100.0),
+			asset_type: AssetType::Usx("tsla".to_string()),
+			custodian: Custodian("robinhood".to_string()),
+		}];
+		if lots.is_empty() {
+			println!("No lots yet");
+		} else {
+			println!("{:16}  {:15}  {:10}  {}", "LOT ID", "CUSTODIAN", "ASSET", "SHARES");
+			for ref lot in lots {
+				println!("{:16}  {:15}  {:10}  {}", lot.uid_pretty(), lot.custodian.name(), lot.asset_type.name(), lot.share_count)
+			}
+		}
 	} else if let Some(_) = matches.subcommand_matches("assets") {
 		let ladder = Ladder {
 			assets: vec![
@@ -45,21 +58,10 @@ fn main() -> Result<(), Box<dyn Error>> {
 	Ok(())
 }
 
-pub fn lots_main() {
-	let lots: Vec<Lot> = vec![Lot {
-		uid: 1,
-		share_count: ShareCount(100.0),
-		asset_type: AssetType::Usx("tsla".to_string()),
-		custodian: Custodian("robinhood".to_string()),
-	}];
-	if lots.is_empty() {
-		println!("No lots yet");
-	} else {
-		println!("{:16}  {:15}  {:10}  {}", "LOT ID", "CUSTODIAN", "ASSET", "SHARES");
-		for ref lot in lots {
-			println!("{:16}  {:15}  {:10}  {}", lot.uid_pretty(), lot.custodian.name(), lot.asset_type.name(), lot.share_count)
-		}
-	}
+#[derive(Debug)]
+struct Holding {
+	pub symbol: String,
+	pub lots: Vec<Lot>,
 }
 
 #[derive(Debug)]
@@ -84,6 +86,7 @@ impl AssetType {
 	}
 }
 
+#[derive(Clone, Debug)]
 pub struct Lot {
 	pub uid: u64,
 	pub share_count: ShareCount,
@@ -98,6 +101,7 @@ impl Lot {
 }
 
 
+#[derive(PartialOrd, PartialEq, Copy, Clone, Debug)]
 pub struct ShareCount(f64);
 
 impl Display for ShareCount {
