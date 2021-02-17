@@ -11,12 +11,7 @@ mod disk;
 mod cli;
 
 fn main() -> Result<(), Box<dyn Error>> {
-	let lots: Vec<Lot> = vec![Lot {
-		uid: 1,
-		share_count: ShareCount(100.0),
-		asset_type: AssetType::Usx("TSLA".to_string()),
-		custodian: Custodian("robinhood".to_string()),
-	}];
+
 	let ladder = Ladder {
 		assets: vec![
 			AssetType::Usx("SPCE".into()),
@@ -28,10 +23,12 @@ fn main() -> Result<(), Box<dyn Error>> {
 
 	let yaml = clap::load_yaml!("cli.yaml");
 	let matches = clap::App::from(yaml).get_matches();
-	if let Some(_) = matches.subcommand_matches("init") {
+	if let Some(_) = matches.subcommand_matches("lots") {
+		cli::lots()?;
+	} else if let Some(_) = matches.subcommand_matches("init") {
 		cli::init()?;
 	} else if let Some(_) = matches.subcommand_matches("status") {
-		cli::status(&lots, ladder)?;
+		cli::status( ladder)?;
 	} else {
 		eprintln!("No command found");
 	}

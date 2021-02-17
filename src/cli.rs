@@ -5,12 +5,8 @@ use smarket::yf::PricingResult;
 
 use crate::{AssetType, disk, Ladder, Lot};
 
-pub fn init() -> Result<(), Box<dyn Error>> {
-	disk::init();
-	Ok(())
-}
-
-pub fn status(lots: &Vec<Lot>, ladder: Ladder) -> Result<(), Box<dyn Error>> {
+pub fn status(ladder: Ladder) -> Result<(), Box<dyn Error>> {
+	let lots = disk::read_lots()?;
 	let portions = ladder.portions();
 	let counts = counts(&lots);
 	let price_symbols = {
@@ -57,6 +53,19 @@ pub fn status(lots: &Vec<Lot>, ladder: Ladder) -> Result<(), Box<dyn Error>> {
 			drift, drift_portion * 100.0
 		)
 	}
+	Ok(())
+}
+
+pub fn lots() -> Result<(), Box<dyn Error>> {
+	let lots = disk::read_lots()?;
+	for lot in lots {
+		println!("{:?}", lot);
+	}
+	Ok(())
+}
+
+pub fn init() -> Result<(), Box<dyn Error>> {
+	disk::init();
 	Ok(())
 }
 
