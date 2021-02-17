@@ -10,7 +10,7 @@ use std::error::Error;
 use std::fmt;
 use std::fmt::Display;
 
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 
 pub use lot::*;
 
@@ -78,14 +78,14 @@ impl Ladder {
 	}
 }
 
-#[derive(Clone, Debug, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct AssetTag(String);
 
 impl AssetTag {
 	pub fn as_str(&self) -> &str { &self.0 }
 }
 
-#[derive(PartialOrd, PartialEq, Copy, Clone, Debug, Deserialize)]
+#[derive(PartialOrd, PartialEq, Copy, Clone, Debug, Serialize, Deserialize)]
 pub struct ShareCount(f64);
 
 impl ShareCount {
@@ -98,7 +98,7 @@ impl Display for ShareCount {
 	}
 }
 
-#[derive(Clone, Debug, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Custodian(String);
 
 impl Custodian {

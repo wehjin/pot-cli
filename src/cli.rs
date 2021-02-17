@@ -1,4 +1,5 @@
 use std::collections::{HashMap, HashSet};
+use std::env;
 use std::error::Error;
 
 use smarket::yf::PricingResult;
@@ -69,7 +70,13 @@ pub fn lots() -> Result<(), Box<dyn Error>> {
 }
 
 pub fn init() -> Result<(), Box<dyn Error>> {
-	disk::init();
+	let current_folder = env::current_dir()?;
+	if disk::is_not_initialized() {
+		disk::init()?;
+		println!("Initialized empty Pot in {}", current_folder.display());
+	} else {
+		println!("Skipped reinitializing existing Pot in {}", current_folder.display());
+	}
 	Ok(())
 }
 
