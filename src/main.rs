@@ -55,9 +55,11 @@ pub struct Ladder {
 
 impl Ladder {
 	pub fn ordered_symbols(&self) -> Vec<String> {
-		self.assets.iter().map(|it| {
-			it.as_str().to_uppercase()
-		}).collect()
+		self.assets
+			.iter()
+			.rev()
+			.map(|it| it.as_str().to_uppercase())
+			.collect()
 	}
 	pub fn weights(&self) -> HashMap<String, f64> {
 		self.assets
