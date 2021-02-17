@@ -3,3 +3,5 @@ about: Manages assets
 subcommands:
   - status:
       about: List asset statuses
+  - init:
+      about: Create an empty asset pot

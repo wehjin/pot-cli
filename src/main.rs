@@ -2,12 +2,13 @@ extern crate clap;
 extern crate hex;
 extern crate smarket;
 
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
 use std::error::Error;
 use std::fmt;
 use std::fmt::Display;
 
-use smarket::yf::PricingResult;
+mod disk;
+mod cli;
 
 fn main() -> Result<(), Box<dyn Error>> {
 	let lots: Vec<Lot> = vec![Lot {
@@ -27,78 +28,25 @@ fn main() -> Result<(), Box<dyn Error>> {
 
 	let yaml = clap::load_yaml!("cli.yaml");
 	let matches = clap::App::from(yaml).get_matches();
-	if let Some(_) = matches.subcommand_matches("status") {
-		let portions = ladder.portions();
-		let counts = counts(&lots);
-		let price_symbols = {
-			let mut symbols = portions.keys().cloned().collect::<HashSet<_>>();
-			symbols.extend(counts.keys().cloned().collect::<HashSet<_>>());
-			symbols.into_iter().collect::<Vec<_>>()
-		};
-		let prices = smarket::yf::price_assets(&price_symbols)?
-			.iter()
-			.map(|(symbol, result)| {
-				let usd_price = match result {
-					PricingResult::Priced { usd_price, .. } => *usd_price,
-					_ => panic!("missing price")
-				};
-				(symbol.to_string(), usd_price.as_f64())
-			})
-			.collect::<HashMap<String, _>>();
-		let values = prices.iter().map(|(symbol, price)| {
-			let count = counts.get(symbol).cloned().unwrap_or(0.0);
-			(symbol.to_string(), price * count)
-		}).collect::<HashMap<String, _>>();
-		let full_value: f64 = values.values().sum();
-
-		println!(
-			"{:8}  {:6}    {:10}  {:^6}    {:10}  {:^6}    {:10}  {:^6}",
-			"ASSET ID", "SHARES",
-			"MARKET($)", "%",
-			"TARGET($)", "%",
-			"DRIFT($)", "%"
-		);
-		for symbol in ladder.ordered_symbols() {
-			let target_portion = portions.get(&symbol).expect("portion");
-			let count = counts.get(&symbol).cloned().unwrap_or(0.0);
-			let market = values.get(&symbol).expect("value");
-			let market_portion = market / full_value;
-			let target = target_portion * full_value;
-			let drift = market - target;
-			let drift_portion = market_portion - target_portion;
-			println!(
-				"{:8}  {:6.2}    {:10.1}  {:5.1}%    {:10.1}  {:5.1}%    {:10.1}  {:5.1}% ",
-				symbol, count,
-				market, market_portion * 100.0,
-				target, target_portion * 100.0,
-				drift, drift_portion * 100.0
-			)
-		}
+	if let Some(_) = matches.subcommand_matches("init") {
+		cli::init()?;
+	} else if let Some(_) = matches.subcommand_matches("status") {
+		cli::status(&lots, ladder)?;
 	} else {
 		eprintln!("No command found");
 	}
 	Ok(())
 }
 
-fn counts(lots: &Vec<Lot>) -> HashMap<String, f64> {
-	let mut map: HashMap<String, f64> = HashMap::new();
-	for lot in lots {
-		let AssetType::Usx(ref symbol) = lot.asset_type;
-		let previous = map.get(symbol).cloned().unwrap_or(0.0);
-		let next = previous + lot.share_count.as_f64();
-		map.insert(symbol.to_string(), next);
-	}
-	map
-}
 
 #[derive(Debug)]
-struct Holding {
+pub struct Holding {
 	pub symbol: String,
 	pub lots: Vec<Lot>,
 }
 
 #[derive(Debug)]
-struct Ladder {
+pub struct Ladder {
 	pub assets: Vec<AssetType>
 }
 
