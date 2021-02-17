@@ -9,3 +9,4 @@ edition = "2018"
 [dependencies]
 clap = { version = "3.0.0-beta.2", features = ["yaml"] }
 hex = "0.4.2"
+smarket = { git = "https://github.com/wehjin/smarket.git" }
