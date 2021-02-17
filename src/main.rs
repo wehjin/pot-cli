@@ -37,7 +37,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 	} else if let Some(_) = matches.subcommand_matches("status") {
 		cli::status(ladder)?;
 	} else {
-		eprintln!("No command found");
+		eprintln!("No command specified");
 	}
 	Ok(())
 }
