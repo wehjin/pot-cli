@@ -3,3 +3,5 @@ about: Manages assets
 subcommands:
   - lots:
       about: List, create, or delete lots
+  - assets:
+      about: List and fill assets
