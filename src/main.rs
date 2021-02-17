@@ -102,7 +102,7 @@ impl Display for ShareCount {
 pub struct Custodian(String);
 
 impl Custodian {
-	pub fn name(&self) -> &str {
+	pub fn as_str(&self) -> &str {
 		&self.0
 	}
 }

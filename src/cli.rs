@@ -57,9 +57,13 @@ pub fn status(ladder: Ladder) -> Result<(), Box<dyn Error>> {
 }
 
 pub fn lots() -> Result<(), Box<dyn Error>> {
+	println!("{:16}  {:10}  {:8}  {:8}", "LOT ID", "CUSTODY", "SYMBOL", "COUNT");
 	let lots = disk::read_lots()?;
 	for lot in lots {
-		println!("{:?}", lot);
+		println!(
+			"{:016}  {:10}  {:8}  {:8}",
+			lot.uid, lot.custodian.as_str(), lot.asset_tag.as_str(), lot.share_count.as_f64()
+		);
 	}
 	Ok(())
 }
