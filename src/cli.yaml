@@ -6,9 +6,11 @@ subcommands:
   - status:
       about: Show the status of the current pot
   - lots:
-      about: List or create lots
+      about: List lots
+  - add:
+      about: Add an item to the pot
       subcommands:
-        - add:
+        - lot:
             about: Add a lot to the pot
             args:
               - CUSTODY:
