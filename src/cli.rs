@@ -100,9 +100,9 @@ pub fn init() -> Result<(), Box<dyn Error>> {
 	let current_folder = env::current_dir()?;
 	if disk::is_not_initialized() {
 		disk::init()?;
-		println!("Initialized empty Pot in {}", current_folder.display());
+		println!("Initialized pot in {}", current_folder.display());
 	} else {
-		println!("Skipped reinitializing existing Pot in {}", current_folder.display());
+		println!("Skipped reinitializing existing pot in {}", current_folder.display());
 	}
 	Ok(())
 }
