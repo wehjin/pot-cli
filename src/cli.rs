@@ -4,7 +4,28 @@ use std::error::Error;
 
 use smarket::yf::PricingResult;
 
-use crate::{disk, Ladder, Lot};
+use crate::{AssetTag, Custodian, disk, Ladder, Lot, ShareCount};
+
+pub fn add_lot(custody: &str, symbol: &str, share_count: f64, uid: Option<u64>) -> Result<(), Box<dyn Error>> {
+	let uid = uid.unwrap_or_else(Lot::random_uid);
+	let symbol = &symbol.to_uppercase();
+	let mut lots = disk::read_lots()?;
+	let existing = lots.iter().find(|it| it.uid == uid);
+	if existing.is_some() {
+		println!("skip: Lot {:016} already exists", uid)
+	} else {
+		let lot = Lot {
+			custodian: Custodian(custody.to_string()),
+			asset_tag: AssetTag(symbol.to_string()),
+			share_count: ShareCount(share_count),
+			uid,
+		};
+		lots.extend(vec![lot]);
+		disk::write_lots(&lots)?;
+		println!("{:016}", uid);
+	}
+	Ok(())
+}
 
 pub fn status(ladder: Ladder) -> Result<(), Box<dyn Error>> {
 	let lots = disk::read_lots()?;
@@ -59,7 +80,7 @@ pub fn lots() -> Result<(), Box<dyn Error>> {
 	let lots = disk::read_lots()?;
 	for lot in lots {
 		println!(
-			"{:016}  {:10}  {:8}  {:8}",
+			"{:016x}  {:10}  {:8}  {:8}",
 			lot.uid, lot.custodian.as_str(), lot.asset_tag.as_str(), lot.share_count.as_f64()
 		);
 	}

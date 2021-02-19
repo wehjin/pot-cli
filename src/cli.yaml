@@ -2,27 +2,29 @@ name: pot
 about: Manages assets
 subcommands:
   - init:
-      about: Create an empty asset Pot
-  - add:
-      about: Add a Lot to the Pot
-      args:
-        - CUSTODY:
-            help: Sets the Lot's custodian
-            required: true
-            index: 1
-        - SYMBOL:
-            help: Sets the Lot's symbol
-            required: true
-            index: 2
-        - SHARECOUNT:
-            help: Sets the Lot's share count
-            required: true
-            index: 3
-        - UID:
-            help: Sets the Lot's identifier
-            required: false
-            index: 4
+      about: Create an empty pot
   - status:
-      about: List asset statuses
+      about: Show the status of the current pot
   - lots:
-      about: List Lots
+      about: List or create lots
+      subcommands:
+        - add:
+            about: Add a lot to the pot
+            args:
+              - CUSTODY:
+                  help: Set the lot's custodian
+                  required: true
+                  index: 1
+              - SYMBOL:
+                  help: Set the lot's symbol
+                  required: true
+                  index: 2
+              - SHARECOUNT:
+                  help: Set the lot's size
+                  required: true
+                  index: 3
+              - UID:
+                  help: Set the lot's identifier
+                  required: false
+                  index: 4
+

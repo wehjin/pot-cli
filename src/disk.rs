@@ -26,3 +26,12 @@ pub fn read_lots() -> Result<Vec<Lot>, Box<dyn Error>> {
 	Ok(lots)
 }
 
+pub fn write_lots(lots: &Vec<Lot>) -> Result<(), Box<dyn Error>> {
+	let mut wtr = csv::Writer::from_path(LOTS_CSV)?;
+	for lot in lots {
+		wtr.serialize(lot)?;
+	}
+	wtr.flush()?;
+	Ok(())
+}
+

@@ -30,12 +30,20 @@ fn main() -> Result<(), Box<dyn Error>> {
 
 	let yaml = clap::load_yaml!("cli.yaml");
 	let matches = clap::App::from(yaml).get_matches();
-	if let Some(_) = matches.subcommand_matches("lots") {
-		cli::lots()?;
-	} else if let Some(_) = matches.subcommand_matches("init") {
+	if let Some(_) = matches.subcommand_matches("init") {
 		cli::init()?;
 	} else if let Some(_) = matches.subcommand_matches("status") {
 		cli::status(ladder)?;
+	} else if let Some(matches) = matches.subcommand_matches("lots") {
+		if let Some(matches) = matches.subcommand_matches("add") {
+			let custody = matches.value_of("CUSTODY").expect("custody");
+			let symbol = matches.value_of("SYMBOL").expect("symbol").to_uppercase();
+			let share_count = matches.value_of("SHARECOUNT").expect("sharecount").parse::<f64>()?;
+			let uid = matches.value_of("UID").map_or(Ok(None), |it| it.parse::<u64>().map(Some))?;
+			cli::add_lot(custody, &symbol, share_count, uid)?;
+		} else {
+			cli::lots()?;
+		}
 	} else {
 		eprintln!("No command specified");
 	}
