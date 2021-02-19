@@ -17,11 +17,12 @@ pub struct Lot {
 }
 
 impl Lot {
-	pub fn uid_pretty(&self) -> String {
-		hex::encode(self.uid.to_be_bytes())
-	}
-
 	pub fn random_uid() -> u64 {
 		rand::thread_rng().gen()
 	}
+	pub fn uid_pretty(&self) -> String {
+		hex::encode(self.uid.to_be_bytes())
+	}
+	pub fn symbol_string(&self) -> String { self.asset_tag.as_str().to_string() }
+	pub fn is_funded(&self) -> bool { self.share_count.is_non_zero() }
 }
