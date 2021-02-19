@@ -53,7 +53,7 @@ pub fn status(ladder: Ladder) -> Result<(), Box<dyn Error>> {
 	let full_value: f64 = values.values().sum();
 
 	println!(
-		"{:8}  {:6}    {:10}  {:^6}    {:10}  {:^6}    {:10}  {:^6}",
+		"{:8}  {:9}    {:10}  {:^6}    {:10}  {:^6}    {:10}  {:^6}",
 		"ASSET ID", "SHARES", "MARKET($)", "%PF", "TARGET($)", "%PF", "DRIFT($)", "%PF"
 	);
 	for symbol in ladder.ordered_symbols() {
@@ -65,7 +65,7 @@ pub fn status(ladder: Ladder) -> Result<(), Box<dyn Error>> {
 		let drift = market - target;
 		let drift_portion = market_portion - target_portion;
 		println!(
-			"{:8}  {:6.2}    {:>10}  {:5.1}%    {:>10}  {:5.1}%    {:>10}  {:5.1}% ",
+			"{:8}  {:>9.2}    {:>10}  {:5.1}%    {:>10}  {:5.1}%    {:>10}  {:5.1}% ",
 			symbol, count,
 			shorten(market), market_portion * 100.0,
 			shorten(target), target_portion * 100.0,
@@ -111,9 +111,9 @@ fn counts(lots: &Vec<Lot>) -> HashMap<String, f64> {
 
 pub fn shorten(no: f64) -> String {
 	if no.is_nan() {
-		"NAN".to_string()
+		"$NAN".to_string()
 	} else if no == 0.0 {
-		"0".to_string()
+		"$0".to_string()
 	} else {
 		let pos = no.abs();
 		let quantity = if pos >= 1e12 {
