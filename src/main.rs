@@ -41,6 +41,11 @@ fn main() -> Result<(), Box<dyn Error>> {
 		cli::lots()?;
 	} else if let Some(_) = matches.subcommand_matches("cash") {
 		cli::cash()?;
+	} else if let Some(matches) = matches.subcommand_matches("shares") {
+		let custodian = matches.value_of("CUSTODIAN").expect("custodian");
+		let symbol = matches.value_of("SYMBOL").expect("symbol").to_uppercase();
+		let count = matches.value_of("COUNT").map(|s| s.parse::<f64>().expect("count"));
+		cli::shares(&custodian, &symbol, count)?;
 	} else if let Some(matches) = matches.subcommand_matches("set") {
 		if let Some(matches) = matches.subcommand_matches("cash") {
 			let value = matches.value_of("VALUE").expect("value").parse::<f64>()?;

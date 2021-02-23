@@ -18,6 +18,31 @@ pub fn init() -> Result<(), Box<dyn Error>> {
 	Ok(())
 }
 
+pub fn read_shares(custodian: &str, symbol: &str) -> Result<f64, Box<dyn Error>> {
+	let lots = read_lots()?;
+	let lot = lots.into_iter().find(|lot| lot.has_symbol(symbol) && lot.has_custodian(custodian));
+	let count = if let Some(lot) = lot {
+		lot.share_count.as_f64()
+	} else {
+		0.0
+	};
+	Ok(count)
+}
+
+pub fn write_shares(custodian: &str, symbol: &str, count: f64) -> Result<u64, Box<dyn Error>> {
+	let mut lot_id: Option<u64> = None;
+	let new_lots = read_lots()?.into_iter().map(|lot| {
+		if lot.has_symbol(symbol) && lot.has_custodian(custodian) {
+			lot_id = Some(lot.uid);
+			lot.with_share_count(count)
+		} else {
+			lot
+		}
+	}).collect::<Vec<_>>();
+	write_lots(&new_lots)?;
+	Ok(lot_id.expect("lot it"))
+}
+
 pub fn read_cash() -> Result<f64, Box<dyn Error>> {
 	let mut s = String::new();
 	File::open(CASH_TXT)?.read_to_string(&mut s)?;

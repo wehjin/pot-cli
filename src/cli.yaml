@@ -9,6 +9,21 @@ subcommands:
       about: Lists lots
   - cash:
       about: Prints the free cash value
+  - shares:
+      about: Lists and updates share counts
+      args:
+        - CUSTODIAN:
+            help: Sets the custodian
+            required: true
+            index: 1
+        - SYMBOL:
+            help: Sets the symbol
+            required: true
+            index: 2
+        - COUNT:
+            help: Sets the count
+            required: false
+            index: 3
   - set:
       about: Sets a pot configuration property
       subcommands:

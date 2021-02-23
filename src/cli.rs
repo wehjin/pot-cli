@@ -16,6 +16,20 @@ pub fn cash() -> Result<(), Box<dyn Error>> {
 	Ok(())
 }
 
+pub fn shares(custodian: &str, symbol: &str, count: Option<f64>) -> Result<(), Box<dyn Error>> {
+	match count {
+		None => {
+			let count = disk::read_shares(&custodian, &symbol)?;
+			println!("{}", count);
+		}
+		Some(count) => {
+			let uid = disk::write_shares(&custodian, &symbol, count)?;
+			println_uid(uid);
+		}
+	}
+	Ok(())
+}
+
 pub fn add_lot(custody: &str, symbol: &str, share_count: f64, uid: Option<u64>) -> Result<(), Box<dyn Error>> {
 	let uid = uid.unwrap_or_else(Lot::random_uid);
 	let symbol = &symbol.to_uppercase();
@@ -32,11 +46,14 @@ pub fn add_lot(custody: &str, symbol: &str, share_count: f64, uid: Option<u64>) 
 		};
 		lots.extend(vec![lot]);
 		disk::write_lots(&lots)?;
-		println!("{:016}", uid);
+		println_uid(uid);
 	}
 	Ok(())
 }
 
+fn println_uid(uid: u64) {
+	println!("{:016}", uid);
+}
 
 pub fn status(ladder: Ladder) -> Result<(), Box<dyn Error>> {
 	let portfolio = Portfolio {

@@ -25,4 +25,10 @@ impl Lot {
 	}
 	pub fn symbol_string(&self) -> String { self.asset_tag.as_str().to_string() }
 	pub fn is_funded(&self) -> bool { self.share_count.is_non_zero() }
+	pub fn has_symbol(&self, symbol: &str) -> bool { symbol == self.asset_tag.as_str() }
+	pub fn has_custodian(&self, custodian: &str) -> bool { custodian == self.custodian.as_str() }
+
+	pub fn with_share_count(&self, count: f64) -> Self {
+		Lot { share_count: ShareCount(count), ..self.clone() }
+	}
 }
