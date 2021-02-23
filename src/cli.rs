@@ -78,8 +78,8 @@ pub fn status(ladder: Ladder) -> Result<(), Box<dyn Error>> {
 	}
 	let full_value: f64 = market_values.values().sum();
 	println!(
-		"{:8}  {:9}    {:10}  {:^6}    {:10}  {:^6}    {:10}  {:^6}",
-		"ASSET ID", "SHARES", "MARKET($)", "%PF", "TARGET($)", "%PF", "DRIFT($)", "%PF"
+		"{:8}  {:9}    {:10}  {:^6}    {:^11}  {:10}",
+		"ASSET ID", "SHARES", "MARKET($)", "%PF", "TARGET(%PF)", "ACTION($)"
 	);
 	let ordered_symbols = {
 		let mut symbols = ladder.target_symbols_descending();
@@ -95,13 +95,12 @@ pub fn status(ladder: Ladder) -> Result<(), Box<dyn Error>> {
 		let market_portion = market / full_value;
 		let target = target_portion * full_value;
 		let drift = market - target;
-		let drift_portion = market_portion - target_portion;
 		println!(
-			"{:8}  {:>9.2}    {:>10}  {:5.1}%    {:>10}  {:5.1}%    {:>10}  {:5.1}% ",
+			"{:8}  {:>9.2}    {:>10}  {:5.1}%    {:10.1}%  {:>10}",
 			symbol, count,
-			shorten(market), market_portion * 100.0,
-			shorten(target), target_portion * 100.0,
-			shorten(drift), drift_portion * 100.0
+			shorten_dollars(market), market_portion * 100.0,
+			target_portion * 100.0,
+			shorten_dollars_delta(-drift)
 		)
 	}
 	// TODO: Display low percentages as <0.1% instead of 0%)
@@ -131,41 +130,55 @@ pub fn init() -> Result<(), Box<dyn Error>> {
 	Ok(())
 }
 
-pub fn shorten(no: f64) -> String {
+pub fn shorten_dollars(no: f64) -> String {
 	if no.is_nan() {
 		"$NAN".to_string()
 	} else if no == 0.0 {
 		"$0".to_string()
+	} else if no.is_sign_negative() {
+		format!("(${})", shorten_abs(no))
 	} else {
-		let pos = no.abs();
-		let quantity = if pos >= 1e12 {
-			"1.0T+".to_string()
-		} else {
-			let (short_pos, unit) = if pos >= 1e9 {
-				(pos / 1e9, "B")
-			} else if pos >= 1e6 {
-				(pos / 1e6, "M")
-			} else if pos >= 1e3 {
-				(pos / 1e3, "K")
-			} else {
-				(pos, "")
-			};
-			let s = format!("{:07.3}", short_pos);
-			let digits = if short_pos >= 100.0 {
-				&s[..3]
-			} else if short_pos >= 10.0 {
-				&s[1..5]
-			} else if short_pos >= 1.0 {
-				&s[2..6]
-			} else {
-				&s[3..]
-			};
-			format!("{}{}", digits, unit)
-		};
-		if no.is_sign_negative() {
-			format!("(${})", quantity)
-		} else {
-			format!("${}", quantity)
-		}
+		format!("${}", shorten_abs(no))
 	}
+}
+
+pub fn shorten_dollars_delta(no: f64) -> String {
+	if no.is_nan() {
+		"$NAN".to_string()
+	} else if no == 0.0 {
+		"=$0".to_string()
+	} else if no.is_sign_negative() {
+		format!("-${}", shorten_abs(no))
+	} else {
+		format!("+${}", shorten_abs(no))
+	}
+}
+
+fn shorten_abs(no: f64) -> String {
+	let pos = no.abs();
+	let quantity = if pos >= 1e12 {
+		"1.0T+".to_string()
+	} else {
+		let (short_pos, unit) = if pos >= 1e9 {
+			(pos / 1e9, "B")
+		} else if pos >= 1e6 {
+			(pos / 1e6, "M")
+		} else if pos >= 1e3 {
+			(pos / 1e3, "K")
+		} else {
+			(pos, "")
+		};
+		let s = format!("{:07.3}", short_pos);
+		let digits = if short_pos >= 100.0 {
+			&s[..3]
+		} else if short_pos >= 10.0 {
+			&s[1..5]
+		} else if short_pos >= 1.0 {
+			&s[2..6]
+		} else {
+			&s[3..]
+		};
+		format!("{}{}", digits, unit)
+	};
+	quantity
 }
