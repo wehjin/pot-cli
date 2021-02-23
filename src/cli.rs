@@ -39,30 +39,44 @@ pub fn add_lot(custody: &str, symbol: &str, share_count: f64, uid: Option<u64>) 
 
 
 pub fn status(ladder: Ladder) -> Result<(), Box<dyn Error>> {
-	let portfolio = Portfolio { lots: disk::read_lots()? };
-	let off_target_symbols = portfolio.symbols().difference(&ladder.target_symbols()).cloned().collect::<HashSet<_>>();
-	let mut portion_targets = ladder.target_portions();
-	for off_target_symbol in &off_target_symbols {
-		portion_targets.insert(off_target_symbol.clone(), 0.0);
-	}
+	let portfolio = Portfolio {
+		lots: disk::read_lots()?,
+		free_cash: disk::read_cash()?,
+	};
+	let off_target_symbols = {
+		let mut set = portfolio.symbols().difference(&ladder.target_symbols()).cloned().collect::<HashSet<_>>();
+		set.insert("USD".to_string());
+		set
+	};
+	let portion_targets = {
+		let mut portion_targets = ladder.target_portions();
+		for off_target_symbol in &off_target_symbols {
+			portion_targets.insert(off_target_symbol.clone(), 0.0);
+		}
+		portion_targets
+	};
 	let lot_counts = portfolio.share_counts();
-	let prices = smarket::yf::price_assets(&portfolio.funded_symbols().into_iter().collect())?
-		.iter()
-		.map(|(symbol, result)| {
-			let usd_price = match result {
-				PricingResult::Priced { usd_price, .. } => *usd_price,
-				_ => panic!("missing price")
-			};
-			(symbol.to_string(), usd_price.as_f64())
-		})
-		.collect::<HashMap<String, _>>();
-	let mut actual_values = portfolio.market_values(&prices);
+	let symbol_prices = {
+		let mut symbol_prices = smarket::yf::price_assets(&portfolio.funded_symbols().into_iter().collect())?
+			.iter()
+			.map(|(symbol, result)| {
+				let usd_price = match result {
+					PricingResult::Priced { usd_price, .. } => *usd_price,
+					_ => panic!("missing price")
+				};
+				(symbol.to_string(), usd_price.as_f64())
+			})
+			.collect::<HashMap<String, _>>();
+		symbol_prices.insert("USD".to_string(), 1.0);
+		symbol_prices
+	};
+	let mut market_values = portfolio.market_values(&symbol_prices);
 	for ref target_symbol in ladder.target_symbols() {
-		if !actual_values.contains_key(target_symbol) {
-			actual_values.insert(target_symbol.clone(), 0.0);
+		if !market_values.contains_key(target_symbol) {
+			market_values.insert(target_symbol.clone(), 0.0);
 		}
 	}
-	let full_value: f64 = actual_values.values().sum();
+	let full_value: f64 = market_values.values().sum();
 	println!(
 		"{:8}  {:9}    {:10}  {:^6}    {:10}  {:^6}    {:10}  {:^6}",
 		"ASSET ID", "SHARES", "MARKET($)", "%PF", "TARGET($)", "%PF", "DRIFT($)", "%PF"
@@ -77,7 +91,7 @@ pub fn status(ladder: Ladder) -> Result<(), Box<dyn Error>> {
 	for symbol in ordered_symbols {
 		let target_portion = portion_targets.get(&symbol).expect("portion");
 		let count = lot_counts.get(&symbol).cloned().unwrap_or(0.0);
-		let market = actual_values.get(&symbol).expect("value").clone();
+		let market = market_values.get(&symbol).expect("value").clone();
 		let market_portion = market / full_value;
 		let target = target_portion * full_value;
 		let drift = market - target;

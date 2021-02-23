@@ -2,14 +2,19 @@ use std::collections::{HashMap, HashSet};
 
 use crate::lot::Lot;
 
-pub struct Portfolio { pub lots: Vec<Lot> }
+pub struct Portfolio {
+	pub lots: Vec<Lot>,
+	pub free_cash: f64,
+}
 
 impl Portfolio {
 	pub fn symbols(&self) -> HashSet<String> {
-		self.lots
+		let mut set = self.lots
 			.iter()
 			.map(Lot::symbol_string)
-			.collect::<HashSet<_>>()
+			.collect::<HashSet<_>>();
+		set.insert("USD".to_string());
+		set
 	}
 	pub fn funded_symbols(&self) -> HashSet<String> {
 		self.share_counts()
@@ -26,10 +31,11 @@ impl Portfolio {
 			let next = previous + lot.share_count.as_f64();
 			map.insert(symbol.to_string(), next);
 		}
+		map.insert("USD".to_string(), self.free_cash);
 		map
 	}
 	pub fn market_values(&self, prices: &HashMap<String, f64>) -> HashMap<String, f64> {
-		self.lots.iter().map(|lot| {
+		let mut map: HashMap<String, f64> = self.lots.iter().map(|lot| {
 			let symbol = lot.symbol_string();
 			if lot.is_funded() {
 				let price = prices.get(&symbol).cloned().expect("price");
@@ -37,6 +43,8 @@ impl Portfolio {
 			} else {
 				(symbol, 0.0)
 			}
-		}).collect()
+		}).collect();
+		map.insert("USD".to_string(), self.free_cash);
+		map
 	}
 }
