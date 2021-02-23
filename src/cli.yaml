@@ -2,42 +2,42 @@ name: pot
 about: Manages assets
 subcommands:
   - init:
-      about: Create an empty pot
+      about: Creates an empty pot
   - status:
-      about: Show the status of the current pot
+      about: Shows the status of the current pot
   - lots:
-      about: List lots
+      about: Lists lots
   - cash:
-      about: Print the free cash value
+      about: Prints the free cash value
   - set:
-      about: Set a pot configuration property
+      about: Sets a pot configuration property
       subcommands:
         - cash:
-            about: Set the value of the free cash property
+            about: Sets the value of the free cash property
             args:
               - VALUE:
-                  help: Free cash value
+                  help: Sets the free cash value
                   required: true
   - add:
-      about: Add an item to the pot
+      about: Adds an item to the pot
       subcommands:
         - lot:
-            about: Add a lot to the pot
+            about: Adds a lot to the pot
             args:
               - CUSTODY:
-                  help: Set the lot's custodian
+                  help: Sets the lot's custodian
                   required: true
                   index: 1
               - SYMBOL:
-                  help: Set the lot's symbol
+                  help: Sets the lot's symbol
                   required: true
                   index: 2
               - SHARECOUNT:
-                  help: Set the lot's size
+                  help: Sets the lot's size
                   required: true
                   index: 3
               - UID:
-                  help: Set the lot's identifier
+                  help: Sets the lot's identifier
                   required: false
                   index: 4
 
