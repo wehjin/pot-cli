@@ -6,6 +6,16 @@ use smarket::yf::PricingResult;
 
 use crate::{AssetTag, Custodian, disk, Ladder, Lot, Portfolio, ShareCount};
 
+pub fn set_cash(value: f64) -> Result<(), Box<dyn Error>> {
+	disk::write_cash(value)
+}
+
+pub fn cash() -> Result<(), Box<dyn Error>> {
+	let cash_value = disk::read_cash()?;
+	println!("${:.2}", cash_value);
+	Ok(())
+}
+
 pub fn add_lot(custody: &str, symbol: &str, share_count: f64, uid: Option<u64>) -> Result<(), Box<dyn Error>> {
 	let uid = uid.unwrap_or_else(Lot::random_uid);
 	let symbol = &symbol.to_uppercase();
@@ -80,7 +90,7 @@ pub fn status(ladder: Ladder) -> Result<(), Box<dyn Error>> {
 			shorten(drift), drift_portion * 100.0
 		)
 	}
-	// TODO: Display low percentages s <0.1% instead of 0%)
+	// TODO: Display low percentages as <0.1% instead of 0%)
 	Ok(())
 }
 

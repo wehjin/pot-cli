@@ -39,6 +39,15 @@ fn main() -> Result<(), Box<dyn Error>> {
 		cli::status(ladder)?;
 	} else if let Some(_) = matches.subcommand_matches("lots") {
 		cli::lots()?;
+	} else if let Some(_) = matches.subcommand_matches("cash") {
+		cli::cash()?;
+	} else if let Some(matches) = matches.subcommand_matches("set") {
+		if let Some(matches) = matches.subcommand_matches("cash") {
+			let value = matches.value_of("VALUE").expect("value").parse::<f64>()?;
+			cli::set_cash(value)?;
+		} else {
+			println!("Set what?");
+		}
 	} else if let Some(matches) = matches.subcommand_matches("add") {
 		if let Some(matches) = matches.subcommand_matches("lot") {
 			let custody = matches.value_of("CUSTODY").expect("custody");

@@ -7,6 +7,17 @@ subcommands:
       about: Show the status of the current pot
   - lots:
       about: List lots
+  - cash:
+      about: Print the free cash value
+  - set:
+      about: Set a pot configuration property
+      subcommands:
+        - cash:
+            about: Set the value of the free cash property
+            args:
+              - VALUE:
+                  help: Free cash value
+                  required: true
   - add:
       about: Add an item to the pot
       subcommands:
