@@ -39,8 +39,13 @@ fn main() -> Result<(), Box<dyn Error>> {
 		cli::lots()?;
 	} else if let Some(_) = matches.subcommand_matches("cash") {
 		cli::cash()?;
-	} else if let Some(_) = matches.subcommand_matches("targets") {
-		cli::targets()?;
+	} else if let Some(targets_matches) = matches.subcommand_matches("targets") {
+		if let Some(add_matches) = targets_matches.subcommand_matches("add") {
+			let symbols = add_matches.value_of("SYMBOLS").expect("symbol");
+			cli::add_targets(symbols)?;
+		} else {
+			cli::targets()?;
+		}
 	} else if let Some(matches) = matches.subcommand_matches("shares") {
 		// TODO Make this a subcommand of lots.
 		let custodian = matches.value_of("CUSTODIAN").expect("custodian");

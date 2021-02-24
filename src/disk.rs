@@ -45,6 +45,13 @@ pub fn read_targets() -> Result<Vec<String>, Box<dyn Error>> {
 	}
 }
 
+pub fn write_targets(targets: &Vec<String>) -> Result<(), Box<dyn Error>> {
+	let targets: String = targets.join("\n");
+	let mut file = File::create(TEAM_TXT)?;
+	file.write_all(targets.as_bytes())?;
+	Ok(())
+}
+
 pub fn read_shares(custodian: &str, symbol: &str) -> Result<f64, Box<dyn Error>> {
 	let lots = read_lots()?;
 	let lot = lots.into_iter().find(|lot| lot.has_symbol(symbol) && lot.has_custodian(custodian));

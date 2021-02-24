@@ -26,6 +26,13 @@ subcommands:
             index: 3
   - targets:
       about: Lists targets
+      subcommands:
+        - add:
+            about: Adds a target to the list of targets
+            args:
+              - SYMBOLS:
+                  help: Sets the comma-separated list of targets to add
+                  required: true
   - set:
       about: Sets a pot configuration property
       subcommands:

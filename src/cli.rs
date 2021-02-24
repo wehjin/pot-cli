@@ -17,9 +17,30 @@ pub fn cash() -> Result<(), Box<dyn Error>> {
 }
 
 pub fn targets() -> Result<(), Box<dyn Error>> {
-	let target_symbols = disk::read_targets()?;
+	let targets = disk::read_targets()?;
 	print::title("TARGETS");
-	target_symbols.iter().for_each(|s| { println!("{}", s); });
+	targets.iter().rev().for_each(|s| { println!("{}", s); });
+	Ok(())
+}
+
+pub fn add_targets(symbols: &str) -> Result<(), Box<dyn Error>> {
+	let symbols = symbols
+		.split(",")
+		.map(|s| s.trim().to_uppercase())
+		.collect::<Vec<_>>();
+	let mut targets = disk::read_targets()?;
+	let mut added = Vec::new();
+	symbols.iter().rev().for_each(|symbol| {
+		let position = targets.iter().position(|t| t == symbol);
+		if position.is_none() {
+			targets.insert(0, symbol.to_string());
+			added.insert(0, symbol.to_string());
+		}
+	});
+	if !added.is_empty() {
+		disk::write_targets(&targets)?;
+	}
+	println!("{}", added.join(","));
 	Ok(())
 }
 
