@@ -138,8 +138,8 @@ pub fn status() -> Result<(), Box<dyn Error>> {
 	}
 	let full_value: f64 = market_values.values().sum();
 	println!(
-		"{:8}  {:9}    {:10}  {:^6}    {:^11}  {:10}",
-		"ASSET ID", "SHARES", "MARKET($)", "%PF", "TARGET(%PF)", "ACTION($)"
+		"{:8}  {:9}    {:10}  {:^6}    {:^11}  {:^6}    {:10}",
+		"ASSET ID", "SHARES", "MARKET($)", "%PF", "TARGET(%PF)", "$", "ACTION($)"
 	);
 	let ordered_symbols = {
 		let mut symbols = ladder.target_symbols_descending();
@@ -156,10 +156,10 @@ pub fn status() -> Result<(), Box<dyn Error>> {
 		let target = target_portion * full_value;
 		let drift = market - target;
 		println!(
-			"{:8}  {:>9.2}    {:>10}  {:5.1}%    {:10.1}%  {:>10}",
+			"{:8}  {:>9.2}    {:>10}  {:5.1}%    {:10.1}%  {:>6}    {:>10}",
 			symbol, count,
 			shorten_dollars(market), market_portion * 100.0,
-			target_portion * 100.0,
+			target_portion * 100.0, shorten_dollars(target),
 			shorten_dollars_delta(-drift)
 		)
 	}
