@@ -9,7 +9,7 @@ use crate::ladder::Ladder;
 const LOTS_CSV: &str = "lots.csv";
 const CASH_TXT: &str = "cash.txt";
 const TEAM_TXT: &str = "team.txt";
-const BASE_TXT: &str = "base.txt";
+const RAMP_TXT: &str = "ramp.txt";
 
 pub fn is_not_initialized() -> bool {
 	csv::Reader::from_path(LOTS_CSV).is_err()
@@ -29,13 +29,13 @@ pub fn read_ladder() -> Result<Ladder, Box<dyn Error>> {
 }
 
 pub fn read_ramp() -> Result<Ramp, Box<dyn Error>> {
-	let string = read_string(BASE_TXT).unwrap_or("golden".to_string());
-	let ramp = match string.trim() {
-		"golden" => Ramp::Golden,
-		"flat" => Ramp::Flat,
-		_ => Ramp::Golden
-	};
+	let string = read_string(RAMP_TXT).unwrap_or("golden".to_string());
+	let ramp = Ramp::from_str(&string);
 	Ok(ramp)
+}
+
+pub fn write_ramp(ramp: Ramp) -> Result<(), Box<dyn Error>> {
+	write_string(RAMP_TXT, ramp.as_str())
 }
 
 pub fn read_targets() -> Result<Vec<String>, Box<dyn Error>> {
@@ -96,8 +96,7 @@ pub fn read_cash() -> Result<f64, Box<dyn Error>> {
 
 pub fn write_cash(value: f64) -> Result<(), Box<dyn Error>> {
 	let value_s = value.to_string();
-	File::create(CASH_TXT)?.write_all(value_s.as_bytes())?;
-	Ok(())
+	write_string(CASH_TXT, &value_s)
 }
 
 pub fn read_lots() -> Result<Vec<Lot>, Box<dyn Error>> {
@@ -129,4 +128,9 @@ fn read_string(path: &str) -> Result<String, Box<dyn Error>> {
 	let mut s = String::new();
 	File::open(path)?.read_to_string(&mut s)?;
 	Ok(s)
+}
+
+fn write_string(path: &str, string: &str) -> Result<(), Box<dyn Error>> {
+	File::create(path)?.write_all(string.as_bytes())?;
+	Ok(())
 }

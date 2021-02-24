@@ -44,6 +44,13 @@ fn main() -> Result<(), Box<dyn Error>> {
 		}
 	} else if let Some(_) = matches.subcommand_matches("cash") {
 		cli::cash()?;
+	} else if let Some(ramp_matches) = matches.subcommand_matches("ramp") {
+		if let Some(ramp_set_matches) = ramp_matches.subcommand_matches("set") {
+			let s = ramp_set_matches.value_of("RAMP").expect("ramp").to_lowercase();
+			cli::set_ramp(&s)?;
+		} else {
+			cli::ramp()?;
+		}
 	} else if let Some(targets_matches) = matches.subcommand_matches("targets") {
 		if let Some(add_matches) = targets_matches.subcommand_matches("add") {
 			let symbols = add_matches.value_of("SYMBOLS").expect("symbol");

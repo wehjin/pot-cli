@@ -9,9 +9,19 @@ subcommands:
       about: Lists lots
       subcommands:
         - symbols:
-            help: Lists symbols from all lots in alphabetical order
+            about: Lists symbols from all lots in alphabetical order
   - cash:
       about: Prints the free cash value
+  - ramp:
+      about: Prints and updates the pot ramp
+      subcommands:
+        - set:
+            about: Updates the ramp value
+            args:
+              - RAMP:
+                  help: golden, flat, or default
+                  required: true
+                  index: 1
   - shares:
       about: Lists and updates share counts
       args:

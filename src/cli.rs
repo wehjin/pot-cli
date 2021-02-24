@@ -5,6 +5,7 @@ use std::error::Error;
 use smarket::yf::PricingResult;
 
 use crate::{AssetTag, Custodian, disk, Lot, Portfolio, print, ShareCount};
+use crate::core::Ramp;
 
 pub fn set_cash(value: f64) -> Result<(), Box<dyn Error>> {
 	disk::write_cash(value)
@@ -13,6 +14,19 @@ pub fn set_cash(value: f64) -> Result<(), Box<dyn Error>> {
 pub fn cash() -> Result<(), Box<dyn Error>> {
 	let cash_value = disk::read_cash()?;
 	println!("${:.2}", cash_value);
+	Ok(())
+}
+
+pub fn set_ramp(ramp_s: &str) -> Result<(), Box<dyn Error>> {
+	let ramp = Ramp::from_str(ramp_s);
+	disk::write_ramp(ramp)?;
+	println!("{}", ramp_s);
+	Ok(())
+}
+
+pub fn ramp() -> Result<(), Box<dyn Error>> {
+	let ramp = disk::read_ramp()?;
+	println!("{}", ramp.as_str());
 	Ok(())
 }
 
