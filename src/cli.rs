@@ -97,12 +97,17 @@ fn println_uid(uid: u64) {
 	println!("{:016}", uid);
 }
 
+pub fn value() -> Result<(), Box<dyn Error>> {
+	let portfolio = disk::read_portfolio()?;
+	let prices = fetch_price_map(&portfolio)?;
+	let value = portfolio.market_value(&prices);
+	println!("{}", shorten_dollars(value));
+	Ok(())
+}
+
 pub fn status() -> Result<(), Box<dyn Error>> {
 	let ladder = disk::read_ladder()?;
-	let portfolio = Portfolio {
-		lots: disk::read_lots()?,
-		free_cash: disk::read_cash()?,
-	};
+	let portfolio = disk::read_portfolio()?;
 	let off_target_symbols = {
 		let mut set = portfolio.symbols().difference(&ladder.target_symbols()).cloned().collect::<HashSet<_>>();
 		set.insert("USD".to_string());
@@ -116,20 +121,7 @@ pub fn status() -> Result<(), Box<dyn Error>> {
 		portion_targets
 	};
 	let lot_counts = portfolio.share_counts();
-	let symbol_prices = {
-		let mut symbol_prices = smarket::yf::price_assets(&portfolio.funded_symbols().into_iter().collect())?
-			.iter()
-			.map(|(symbol, result)| {
-				let usd_price = match result {
-					PricingResult::Priced { usd_price, .. } => *usd_price,
-					_ => panic!("missing price")
-				};
-				(symbol.to_string(), usd_price.as_f64())
-			})
-			.collect::<HashMap<String, _>>();
-		symbol_prices.insert("USD".to_string(), 1.0);
-		symbol_prices
-	};
+	let symbol_prices = fetch_price_map(&portfolio)?;
 	let mut market_values = portfolio.market_values(&symbol_prices);
 	for ref target_symbol in ladder.target_symbols() {
 		if !market_values.contains_key(target_symbol) {
@@ -254,4 +246,20 @@ fn shorten_abs(no: f64) -> String {
 		format!("{}{}", digits, unit)
 	};
 	quantity
+}
+
+fn fetch_price_map(portfolio: &Portfolio) -> Result<HashMap<String, f64>, Box<dyn Error>> {
+	let portfolio_symbols = portfolio.funded_symbols().into_iter().collect();
+	let mut symbol_map = smarket::yf::price_assets(&portfolio_symbols)?
+		.iter()
+		.map(|(symbol, result)| {
+			let usd_price = match result {
+				PricingResult::Priced { usd_price, .. } => *usd_price,
+				_ => panic!("missing price")
+			};
+			(symbol.to_string(), usd_price.as_f64())
+		})
+		.collect::<HashMap<String, _>>();
+	symbol_map.insert("USD".to_string(), 1.0);
+	Ok(symbol_map)
 }

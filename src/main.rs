@@ -36,6 +36,8 @@ fn main() -> Result<(), Box<dyn Error>> {
 		cli::init()?;
 	} else if let Some(_) = matches.subcommand_matches("status") {
 		cli::status()?;
+	} else if let Some(_) = matches.subcommand_matches("value") {
+		cli::value()?;
 	} else if let Some(lots_matches) = matches.subcommand_matches("lots") {
 		if let Some(_) = lots_matches.subcommand_matches("symbols") {
 			cli::lots_symbols()?;

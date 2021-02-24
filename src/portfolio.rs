@@ -47,4 +47,8 @@ impl Portfolio {
 		map.insert("USD".to_string(), self.free_cash);
 		map
 	}
+	pub fn market_value(&self, prices: &HashMap<String, f64>) -> f64 {
+		let market_values = self.market_values(&prices);
+		market_values.iter().map(|(_, value)| *value).sum()
+	}
 }

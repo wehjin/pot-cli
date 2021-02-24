@@ -5,6 +5,7 @@ use std::io::{Read, Write};
 use crate::{AssetTag, Lot};
 use crate::core::Ramp;
 use crate::ladder::Ladder;
+use crate::portfolio::Portfolio;
 
 const LOTS_CSV: &str = "lots.csv";
 const CASH_TXT: &str = "cash.txt";
@@ -20,6 +21,14 @@ pub fn init() -> Result<(), Box<dyn Error>> {
 	let mut writer = csv::Writer::from_path(LOTS_CSV)?;
 	writer.serialize(lots)?;
 	Ok(())
+}
+
+pub fn read_portfolio() -> Result<Portfolio, Box<dyn Error>> {
+	let portfolio = Portfolio {
+		lots: read_lots()?,
+		free_cash: read_cash()?,
+	};
+	Ok(portfolio)
 }
 
 pub fn read_ladder() -> Result<Ladder, Box<dyn Error>> {
