@@ -7,6 +7,9 @@ subcommands:
       about: Shows the status of the current pot
   - lots:
       about: Lists lots
+      subcommands:
+        - symbols:
+            help: Lists symbols from all lots in alphabetical order
   - cash:
       about: Prints the free cash value
   - shares:

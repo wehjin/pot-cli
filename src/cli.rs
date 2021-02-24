@@ -165,6 +165,19 @@ pub fn lots() -> Result<(), Box<dyn Error>> {
 	Ok(())
 }
 
+pub fn lots_symbols() -> Result<(), Box<dyn Error>> {
+	let lots = disk::read_lots()?;
+	let unique_symbols = lots.iter().filter(|lot| lot.share_count.as_f64() > 0.0).map(|lot| lot.asset_tag.as_str().to_string()).collect::<HashSet<_>>();
+	let sorted_symbols = {
+		let mut v = unique_symbols.into_iter().collect::<Vec<_>>();
+		v.sort();
+		v
+	};
+	let line: String = sorted_symbols.join(",");
+	println!("{}", line);
+	Ok(())
+}
+
 pub fn init() -> Result<(), Box<dyn Error>> {
 	let current_folder = env::current_dir()?;
 	if disk::is_not_initialized() {
