@@ -35,15 +35,15 @@ impl Portfolio {
 		map
 	}
 	pub fn market_values(&self, prices: &HashMap<String, f64>) -> HashMap<String, f64> {
-		let mut map: HashMap<String, f64> = self.lots.iter().map(|lot| {
-			let symbol = lot.symbol_string();
-			if lot.is_funded() {
+		let share_counts = self.share_counts();
+		let mut map = share_counts.into_iter().map(|(symbol, count)| {
+			if count > 0.0 {
 				let price = prices.get(&symbol).cloned().expect("price");
-				(symbol, price * lot.share_count.as_f64())
+				(symbol, price * count)
 			} else {
 				(symbol, 0.0)
 			}
-		}).collect();
+		}).collect::<HashMap<String, _>>();
 		map.insert("USD".to_string(), self.free_cash);
 		map
 	}

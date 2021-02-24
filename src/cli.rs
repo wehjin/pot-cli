@@ -108,6 +108,7 @@ pub fn value() -> Result<(), Box<dyn Error>> {
 pub fn status() -> Result<(), Box<dyn Error>> {
 	let ladder = disk::read_ladder()?;
 	let portfolio = disk::read_portfolio()?;
+	println!("Free Cash: {}", shorten_dollars(portfolio.free_cash));
 	let off_target_symbols = {
 		let mut set = portfolio.symbols().difference(&ladder.target_symbols()).cloned().collect::<HashSet<_>>();
 		set.insert("USD".to_string());
