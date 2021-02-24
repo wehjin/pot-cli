@@ -2,10 +2,12 @@ use std::error::Error;
 use std::fs::File;
 use std::io::{Read, Write};
 
-use crate::Lot;
+use crate::{AssetTag, Lot};
+use crate::ladder::Ladder;
 
 const LOTS_CSV: &str = "lots.csv";
 const CASH_TXT: &str = "cash.txt";
+const TEAM_TXT: &str = "team.txt";
 
 pub fn is_not_initialized() -> bool {
 	csv::Reader::from_path(LOTS_CSV).is_err()
@@ -16,6 +18,31 @@ pub fn init() -> Result<(), Box<dyn Error>> {
 	let mut writer = csv::Writer::from_path(LOTS_CSV)?;
 	writer.serialize(lots)?;
 	Ok(())
+}
+
+pub fn read_ladder() -> Result<Ladder, Box<dyn Error>> {
+	let targets = read_targets()?.into_iter().map(AssetTag).collect::<Vec<_>>();
+	Ok(Ladder { targets })
+}
+
+pub fn read_targets() -> Result<Vec<String>, Box<dyn Error>> {
+	let mut file_s = String::new();
+	let file_open = File::open(TEAM_TXT);
+	if file_open.is_err() {
+		Ok(Vec::new())
+	} else {
+		file_open?.read_to_string(&mut file_s)?;
+		let symbols = file_s
+			.split("\n")
+			.into_iter()
+			.map(|s| {
+				let s = s.trim();
+				s.to_uppercase()
+			})
+			.filter(|s| !s.is_empty())
+			.collect::<Vec<_>>();
+		Ok(symbols)
+	}
 }
 
 pub fn read_shares(custodian: &str, symbol: &str) -> Result<f64, Box<dyn Error>> {

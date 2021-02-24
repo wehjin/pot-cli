@@ -11,7 +11,6 @@ use std::fmt::Display;
 
 use serde::{Deserialize, Serialize};
 
-use ladder::*;
 use lot::*;
 use portfolio::*;
 
@@ -21,27 +20,29 @@ mod ladder;
 mod lot;
 mod portfolio;
 
-fn main() -> Result<(), Box<dyn Error>> {
-	let ladder = Ladder {
-		targets: vec![
-			AssetTag("SPCE".into()),
-			AssetTag("GBTC".into()),
-			AssetTag("PEP".into()),
-			AssetTag("TSLA".into())
-		]
-	};
+mod print {
+	pub fn title(s: &str) {
+		println!("{}", s);
+		let width = s.chars().as_str().len();
+		println!("{:=<1$}", "", width);
+	}
+}
 
+fn main() -> Result<(), Box<dyn Error>> {
 	let yaml = clap::load_yaml!("cli.yaml");
 	let matches = clap::App::from(yaml).get_matches();
 	if let Some(_) = matches.subcommand_matches("init") {
 		cli::init()?;
 	} else if let Some(_) = matches.subcommand_matches("status") {
-		cli::status(ladder)?;
+		cli::status()?;
 	} else if let Some(_) = matches.subcommand_matches("lots") {
 		cli::lots()?;
 	} else if let Some(_) = matches.subcommand_matches("cash") {
 		cli::cash()?;
+	} else if let Some(_) = matches.subcommand_matches("targets") {
+		cli::targets()?;
 	} else if let Some(matches) = matches.subcommand_matches("shares") {
+		// TODO Make this a subcommand of lots.
 		let custodian = matches.value_of("CUSTODIAN").expect("custodian");
 		let symbol = matches.value_of("SYMBOL").expect("symbol").to_uppercase();
 		let count = matches.value_of("COUNT").map(|s| s.parse::<f64>().expect("count"));
@@ -64,7 +65,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 			println!("Add what?");
 		}
 	} else {
-		cli::status(ladder)?;
+		cli::status()?;
 	}
 	Ok(())
 }

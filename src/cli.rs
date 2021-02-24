@@ -4,7 +4,7 @@ use std::error::Error;
 
 use smarket::yf::PricingResult;
 
-use crate::{AssetTag, Custodian, disk, Ladder, Lot, Portfolio, ShareCount};
+use crate::{AssetTag, Custodian, disk, Lot, Portfolio, print, ShareCount};
 
 pub fn set_cash(value: f64) -> Result<(), Box<dyn Error>> {
 	disk::write_cash(value)
@@ -13,6 +13,13 @@ pub fn set_cash(value: f64) -> Result<(), Box<dyn Error>> {
 pub fn cash() -> Result<(), Box<dyn Error>> {
 	let cash_value = disk::read_cash()?;
 	println!("${:.2}", cash_value);
+	Ok(())
+}
+
+pub fn targets() -> Result<(), Box<dyn Error>> {
+	let target_symbols = disk::read_targets()?;
+	print::title("TARGETS");
+	target_symbols.iter().for_each(|s| { println!("{}", s); });
 	Ok(())
 }
 
@@ -55,7 +62,8 @@ fn println_uid(uid: u64) {
 	println!("{:016}", uid);
 }
 
-pub fn status(ladder: Ladder) -> Result<(), Box<dyn Error>> {
+pub fn status() -> Result<(), Box<dyn Error>> {
+	let ladder = disk::read_ladder()?;
 	let portfolio = Portfolio {
 		lots: disk::read_lots()?,
 		free_cash: disk::read_cash()?,

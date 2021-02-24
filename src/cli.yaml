@@ -24,6 +24,8 @@ subcommands:
             help: Sets the count
             required: false
             index: 3
+  - targets:
+      about: Lists targets
   - set:
       about: Sets a pot configuration property
       subcommands:
