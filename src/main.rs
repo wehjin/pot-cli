@@ -15,6 +15,7 @@ use lot::*;
 use portfolio::*;
 
 mod cli;
+mod core;
 mod disk;
 mod ladder;
 mod lot;

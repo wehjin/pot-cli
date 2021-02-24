@@ -1,10 +1,12 @@
 use std::collections::{HashMap, HashSet};
 
 use crate::AssetTag;
+use crate::core::Ramp;
 
 #[derive(Debug)]
 pub struct Ladder {
-	pub targets: Vec<AssetTag>
+	pub targets: Vec<AssetTag>,
+	pub ramp: Ramp,
 }
 
 impl Ladder {
@@ -29,7 +31,7 @@ impl Ladder {
 			.enumerate()
 			.map(|(i, asset_type)| {
 				let symbol = asset_type.as_str();
-				(symbol.to_uppercase(), 1.618f64.powf(i as f64))
+				(symbol.to_uppercase(), self.ramp.pow_weight(i))
 			})
 			.collect::<HashMap<String, _>>()
 	}

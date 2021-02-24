@@ -3,11 +3,13 @@ use std::fs::File;
 use std::io::{Read, Write};
 
 use crate::{AssetTag, Lot};
+use crate::core::Ramp;
 use crate::ladder::Ladder;
 
 const LOTS_CSV: &str = "lots.csv";
 const CASH_TXT: &str = "cash.txt";
 const TEAM_TXT: &str = "team.txt";
+const BASE_TXT: &str = "base.txt";
 
 pub fn is_not_initialized() -> bool {
 	csv::Reader::from_path(LOTS_CSV).is_err()
@@ -22,7 +24,18 @@ pub fn init() -> Result<(), Box<dyn Error>> {
 
 pub fn read_ladder() -> Result<Ladder, Box<dyn Error>> {
 	let targets = read_targets()?.into_iter().map(AssetTag).collect::<Vec<_>>();
-	Ok(Ladder { targets })
+	let ramp = read_ramp()?;
+	Ok(Ladder { targets, ramp })
+}
+
+pub fn read_ramp() -> Result<Ramp, Box<dyn Error>> {
+	let string = read_string(BASE_TXT).unwrap_or("golden".to_string());
+	let ramp = match string.trim() {
+		"golden" => Ramp::Golden,
+		"flat" => Ramp::Flat,
+		_ => Ramp::Golden
+	};
+	Ok(ramp)
 }
 
 pub fn read_targets() -> Result<Vec<String>, Box<dyn Error>> {
@@ -78,10 +91,7 @@ pub fn write_shares(custodian: &str, symbol: &str, count: f64) -> Result<u64, Bo
 }
 
 pub fn read_cash() -> Result<f64, Box<dyn Error>> {
-	let mut s = String::new();
-	File::open(CASH_TXT)?.read_to_string(&mut s)?;
-	let cash = s.parse::<f64>()?;
-	Ok(cash)
+	read_f64(CASH_TXT)
 }
 
 pub fn write_cash(value: f64) -> Result<(), Box<dyn Error>> {
@@ -110,3 +120,13 @@ pub fn write_lots(lots: &Vec<Lot>) -> Result<(), Box<dyn Error>> {
 	Ok(())
 }
 
+fn read_f64(path: &str) -> Result<f64, Box<dyn Error>> {
+	let cash = read_string(path)?.parse::<f64>()?;
+	Ok(cash)
+}
+
+fn read_string(path: &str) -> Result<String, Box<dyn Error>> {
+	let mut s = String::new();
+	File::open(path)?.read_to_string(&mut s)?;
+	Ok(s)
+}
