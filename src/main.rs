@@ -20,6 +20,7 @@ mod disk;
 mod ladder;
 mod lot;
 mod portfolio;
+mod pot;
 
 mod print {
 	pub fn title(s: &str) {

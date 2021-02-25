@@ -6,6 +6,7 @@ use smarket::yf::PricingResult;
 
 use crate::{AssetTag, Custodian, disk, Lot, Portfolio, print, ShareCount};
 use crate::core::Ramp;
+use crate::pot::FolderPot;
 
 pub fn set_cash(value: f64) -> Result<(), Box<dyn Error>> {
 	disk::write_cash(value)
@@ -31,18 +32,20 @@ pub fn ramp() -> Result<(), Box<dyn Error>> {
 }
 
 pub fn targets() -> Result<(), Box<dyn Error>> {
-	let targets = disk::read_targets()?;
+	let pot = FolderPot::new();
+	let targets = disk::read_targets(&pot)?;
 	print::title("TARGETS");
 	targets.iter().for_each(|s| { println!("{}", s); });
 	Ok(())
 }
 
 pub fn add_targets(symbols: &str) -> Result<(), Box<dyn Error>> {
+	let pot = FolderPot::new();
 	let symbols = symbols
 		.split(",")
 		.map(|s| s.trim().to_uppercase())
 		.collect::<Vec<_>>();
-	let mut targets = disk::read_targets()?;
+	let mut targets = disk::read_targets(&pot)?;
 	let mut added = Vec::new();
 	symbols.iter().rev().for_each(|symbol| {
 		let position = targets.iter().position(|t| t == symbol);
@@ -52,7 +55,7 @@ pub fn add_targets(symbols: &str) -> Result<(), Box<dyn Error>> {
 		}
 	});
 	if !added.is_empty() {
-		disk::write_targets(&targets)?;
+		disk::write_targets(&targets, &pot)?;
 	}
 	println!("{}", added.join(","));
 	Ok(())
@@ -106,7 +109,8 @@ pub fn value() -> Result<(), Box<dyn Error>> {
 }
 
 pub fn status() -> Result<(), Box<dyn Error>> {
-	let ladder = disk::read_ladder()?;
+	let pot = FolderPot::new();
+	let ladder = disk::read_ladder(&pot)?;
 	let portfolio = disk::read_portfolio()?;
 	println!("Free Cash: {}", shorten_dollars(portfolio.free_cash));
 	let off_target_symbols = {

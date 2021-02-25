@@ -6,10 +6,10 @@ use crate::{AssetTag, Lot};
 use crate::core::Ramp;
 use crate::ladder::Ladder;
 use crate::portfolio::Portfolio;
+use crate::pot::FolderPot;
 
 const LOTS_CSV: &str = "lots.csv";
 const CASH_TXT: &str = "cash.txt";
-const TEAM_TXT: &str = "team.txt";
 const RAMP_TXT: &str = "ramp.txt";
 
 pub fn is_not_initialized() -> bool {
@@ -33,8 +33,8 @@ pub fn read_portfolio() -> Result<Portfolio, Box<dyn Error>> {
 	Ok(portfolio)
 }
 
-pub fn read_ladder() -> Result<Ladder, Box<dyn Error>> {
-	let targets = read_targets()?.into_iter().map(AssetTag).collect::<Vec<_>>();
+pub fn read_ladder(pot: &FolderPot) -> Result<Ladder, Box<dyn Error>> {
+	let targets = read_targets(pot)?.into_iter().map(AssetTag).collect::<Vec<_>>();
 	let ramp = read_ramp()?;
 	Ok(Ladder { targets, ramp })
 }
@@ -49,9 +49,9 @@ pub fn write_ramp(ramp: Ramp) -> Result<(), Box<dyn Error>> {
 	write_string(RAMP_TXT, ramp.as_str())
 }
 
-pub fn read_targets() -> Result<Vec<String>, Box<dyn Error>> {
+pub fn read_targets(pot: &FolderPot) -> Result<Vec<String>, Box<dyn Error>> {
 	let mut file_s = String::new();
-	let file_open = File::open(TEAM_TXT);
+	let file_open = pot.open_team_file();
 	if file_open.is_err() {
 		Ok(Vec::new())
 	} else {
@@ -69,9 +69,9 @@ pub fn read_targets() -> Result<Vec<String>, Box<dyn Error>> {
 	}
 }
 
-pub fn write_targets(targets: &Vec<String>) -> Result<(), Box<dyn Error>> {
+pub fn write_targets(targets: &Vec<String>, pot: &FolderPot) -> Result<(), Box<dyn Error>> {
 	let targets: String = targets.join("\n");
-	let mut file = File::create(TEAM_TXT)?;
+	let mut file = pot.create_team_file()?;
 	file.write_all(targets.as_bytes())?;
 	Ok(())
 }
