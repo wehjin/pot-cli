@@ -33,7 +33,7 @@ pub fn ramp() -> Result<(), Box<dyn Error>> {
 pub fn targets() -> Result<(), Box<dyn Error>> {
 	let targets = disk::read_targets()?;
 	print::title("TARGETS");
-	targets.iter().rev().for_each(|s| { println!("{}", s); });
+	targets.iter().for_each(|s| { println!("{}", s); });
 	Ok(())
 }
 
