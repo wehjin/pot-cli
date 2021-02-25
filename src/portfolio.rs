@@ -1,5 +1,6 @@
 use std::collections::{HashMap, HashSet};
 
+use crate::asset_tag::AssetTag;
 use crate::lot::Lot;
 
 pub struct Portfolio {
@@ -8,33 +9,33 @@ pub struct Portfolio {
 }
 
 impl Portfolio {
-	pub fn symbols(&self) -> HashSet<String> {
+	pub fn symbols(&self) -> HashSet<AssetTag> {
 		let mut set = self.lots
 			.iter()
 			.map(Lot::symbol_string)
 			.collect::<HashSet<_>>();
-		set.insert("USD".to_string());
+		set.insert(AssetTag::Usd);
 		set
 	}
-	pub fn funded_symbols(&self) -> HashSet<String> {
+	pub fn funded_symbols(&self) -> HashSet<AssetTag> {
 		self.share_counts()
 			.into_iter()
 			.filter(|(_, count)| *count > 0.0)
-			.map(|(symbol, _)| symbol)
+			.map(|(asset_tag, _)| asset_tag)
 			.collect()
 	}
-	pub fn share_counts(&self) -> HashMap<String, f64> {
-		let mut map: HashMap<String, f64> = HashMap::new();
+	pub fn share_counts(&self) -> HashMap<AssetTag, f64> {
+		let mut map: HashMap<AssetTag, f64> = HashMap::new();
 		for lot in &self.lots {
-			let symbol = lot.asset_tag.as_str();
-			let previous = map.get(symbol).cloned().unwrap_or(0.0);
+			let asset_tag = &lot.asset_tag;
+			let previous = map.get(asset_tag).cloned().unwrap_or(0.0);
 			let next = previous + lot.share_count.as_f64();
-			map.insert(symbol.to_string(), next);
+			map.insert(asset_tag.clone(), next);
 		}
-		map.insert("USD".to_string(), self.free_cash);
+		map.insert(AssetTag::Usd, self.free_cash);
 		map
 	}
-	pub fn market_values(&self, prices: &HashMap<String, f64>) -> HashMap<String, f64> {
+	pub fn market_values(&self, prices: &HashMap<AssetTag, f64>) -> HashMap<AssetTag, f64> {
 		let share_counts = self.share_counts();
 		let mut map = share_counts.into_iter().map(|(symbol, count)| {
 			if count > 0.0 {
@@ -43,11 +44,11 @@ impl Portfolio {
 			} else {
 				(symbol, 0.0)
 			}
-		}).collect::<HashMap<String, _>>();
-		map.insert("USD".to_string(), self.free_cash);
+		}).collect::<HashMap<AssetTag, _>>();
+		map.insert(AssetTag::Usd, self.free_cash);
 		map
 	}
-	pub fn market_value(&self, prices: &HashMap<String, f64>) -> f64 {
+	pub fn market_value(&self, prices: &HashMap<AssetTag, f64>) -> f64 {
 		let market_values = self.market_values(&prices);
 		market_values.iter().map(|(_, value)| *value).sum()
 	}

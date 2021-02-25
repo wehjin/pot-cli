@@ -14,6 +14,7 @@ use serde::{Deserialize, Serialize};
 use lot::*;
 use portfolio::*;
 
+mod asset_tag;
 mod cli;
 mod core;
 mod disk;
@@ -94,14 +95,6 @@ fn main() -> Result<(), Box<dyn Error>> {
 pub struct Holding {
 	pub symbol: String,
 	pub lots: Vec<Lot>,
-}
-
-
-#[derive(Hash, Ord, PartialOrd, Eq, PartialEq, Clone, Debug, Serialize, Deserialize)]
-pub struct AssetTag(String);
-
-impl AssetTag {
-	pub fn as_str(&self) -> &str { &self.0 }
 }
 
 #[derive(PartialOrd, PartialEq, Copy, Clone, Debug, Serialize, Deserialize)]

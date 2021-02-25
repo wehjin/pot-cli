@@ -2,9 +2,10 @@ use std::error::Error;
 use std::fs::File;
 use std::io::{Read, Write};
 
-use crate::{AssetTag, Lot};
+use crate::asset_tag::AssetTag;
 use crate::core::Ramp;
 use crate::ladder::Ladder;
+use crate::Lot;
 use crate::portfolio::Portfolio;
 use crate::pot::FolderPot;
 
@@ -34,7 +35,7 @@ pub fn read_portfolio() -> Result<Portfolio, Box<dyn Error>> {
 }
 
 pub fn read_ladder(pot: &FolderPot) -> Result<Ladder, Box<dyn Error>> {
-	let targets = read_targets(pot)?.into_iter().map(AssetTag).collect::<Vec<_>>();
+	let targets = read_targets(pot)?.into_iter().map(AssetTag::from).collect::<Vec<_>>();
 	let ramp = read_ramp()?;
 	Ok(Ladder { targets, ramp })
 }

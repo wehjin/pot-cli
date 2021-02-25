@@ -1,7 +1,8 @@
 use rand::Rng;
 use serde::{Deserialize, Serialize};
 
-use crate::{AssetTag, Custodian, ShareCount};
+use crate::{Custodian, ShareCount};
+use crate::asset_tag::AssetTag;
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -23,9 +24,9 @@ impl Lot {
 	pub fn uid_pretty(&self) -> String {
 		hex::encode(self.uid.to_be_bytes())
 	}
-	pub fn symbol_string(&self) -> String { self.asset_tag.as_str().to_string() }
+	pub fn symbol_string(&self) -> AssetTag { self.asset_tag.clone() }
 	pub fn is_funded(&self) -> bool { self.share_count.is_non_zero() }
-	pub fn has_symbol(&self, symbol: &str) -> bool { symbol == self.asset_tag.as_str() }
+	pub fn has_symbol(&self, symbol: &str) -> bool { self.asset_tag.has_symbol(symbol) }
 	pub fn has_custodian(&self, custodian: &str) -> bool { custodian == self.custodian.as_str() }
 
 	pub fn with_share_count(&self, count: f64) -> Self {

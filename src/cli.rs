@@ -4,7 +4,8 @@ use std::error::Error;
 
 use smarket::yf::PricingResult;
 
-use crate::{AssetTag, Custodian, disk, Lot, Portfolio, print, ShareCount};
+use crate::{Custodian, disk, Lot, Portfolio, print, ShareCount};
+use crate::asset_tag::AssetTag;
 use crate::core::Ramp;
 use crate::pot::FolderPot;
 
@@ -75,9 +76,8 @@ pub fn shares(custodian: &str, symbol: &str, count: Option<f64>) -> Result<(), B
 	Ok(())
 }
 
-pub fn add_lot(custody: &str, symbol: &str, share_count: f64, uid: Option<u64>) -> Result<(), Box<dyn Error>> {
+pub fn add_lot(custody: &str, asset_tag: &str, share_count: f64, uid: Option<u64>) -> Result<(), Box<dyn Error>> {
 	let uid = uid.unwrap_or_else(Lot::random_uid);
-	let symbol = &symbol.to_uppercase();
 	let mut lots = disk::read_lots()?;
 	let existing = lots.iter().find(|it| it.uid == uid);
 	if existing.is_some() {
@@ -85,7 +85,7 @@ pub fn add_lot(custody: &str, symbol: &str, share_count: f64, uid: Option<u64>) 
 	} else {
 		let lot = Lot {
 			custodian: Custodian(custody.to_string()),
-			asset_tag: AssetTag(symbol.to_string()),
+			asset_tag: asset_tag.into(),
 			share_count: ShareCount(share_count),
 			uid,
 		};
@@ -115,7 +115,7 @@ pub fn status() -> Result<(), Box<dyn Error>> {
 	println!("Free Cash: {}", shorten_dollars(portfolio.free_cash));
 	let off_target_symbols = {
 		let mut set = portfolio.symbols().difference(&ladder.target_symbols()).cloned().collect::<HashSet<_>>();
-		set.insert("USD".to_string());
+		set.insert(AssetTag::Usd);
 		set
 	};
 	let portion_targets = {
@@ -154,7 +154,7 @@ pub fn status() -> Result<(), Box<dyn Error>> {
 		let drift = market - target;
 		println!(
 			"{:8}  {:>9.2}    {:>10}  {:5.1}%    {:10.1}%  {:>6}    {:>10}",
-			symbol, count,
+			symbol.as_str(), count,
 			shorten_dollars(market), market_portion * 100.0,
 			target_portion * 100.0, shorten_dollars(target),
 			shorten_dollars_delta(-drift)
@@ -178,7 +178,11 @@ pub fn lots() -> Result<(), Box<dyn Error>> {
 
 pub fn lots_symbols() -> Result<(), Box<dyn Error>> {
 	let lots = disk::read_lots()?;
-	let unique_symbols = lots.iter().filter(|lot| lot.share_count.as_f64() > 0.0).map(|lot| lot.asset_tag.as_str().to_string()).collect::<HashSet<_>>();
+	let unique_symbols = lots
+		.iter()
+		.filter(|lot| lot.share_count.as_f64() > 0.0)
+		.map(|lot| lot.asset_tag.as_str().to_string())
+		.collect::<HashSet<_>>();
 	let sorted_symbols = {
 		let mut v = unique_symbols.into_iter().collect::<Vec<_>>();
 		v.sort();
@@ -253,12 +257,16 @@ fn shorten_abs(no: f64) -> String {
 	quantity
 }
 
-fn fetch_price_map(portfolio: &Portfolio) -> Result<HashMap<String, f64>, Box<dyn Error>> {
-	let portfolio_symbols = portfolio.funded_symbols().into_iter().collect::<Vec<_>>();
-	let mut symbol_map = if portfolio_symbols.is_empty() {
+fn fetch_price_map(portfolio: &Portfolio) -> Result<HashMap<AssetTag, f64>, Box<dyn Error>> {
+	let portfolio_assets = portfolio.funded_symbols().into_iter().collect::<Vec<_>>();
+	let mut asset_price = if portfolio_assets.is_empty() {
 		HashMap::new()
 	} else {
-		smarket::yf::price_assets(&portfolio_symbols)?
+		let symbol_asset = portfolio_assets
+			.iter()
+			.map(|it| (it.as_str().to_string(), it.clone())).collect::<HashMap<String, _>>();
+		let symbols = symbol_asset.keys().cloned().collect::<Vec<_>>();
+		let symbol_price = smarket::yf::price_assets(&symbols)?
 			.iter()
 			.map(|(symbol, result)| {
 				let usd_price = match result {
@@ -267,8 +275,12 @@ fn fetch_price_map(portfolio: &Portfolio) -> Result<HashMap<String, f64>, Box<dy
 				};
 				(symbol.to_string(), usd_price.as_f64())
 			})
-			.collect::<HashMap<String, _>>()
+			.collect::<HashMap<String, _>>();
+		symbol_price.into_iter().map(|(symbol, price)| {
+			let asset_tag = symbol_asset.get(&symbol).expect("asset-tag").to_owned();
+			(asset_tag, price)
+		}).collect::<HashMap<AssetTag, _>>()
 	};
-	symbol_map.insert("USD".to_string(), 1.0);
-	Ok(symbol_map)
+	asset_price.insert(AssetTag::Usd, 1.0);
+	Ok(asset_price)
 }
