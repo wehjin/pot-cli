@@ -20,6 +20,8 @@ pub fn init() -> Result<(), Box<dyn Error>> {
 	let lots: Vec<Lot> = Vec::new();
 	let mut writer = csv::Writer::from_path(LOTS_CSV)?;
 	writer.serialize(lots)?;
+	write_cash(0.0)?;
+	write_ramp(Ramp::Golden)?;
 	Ok(())
 }
 
