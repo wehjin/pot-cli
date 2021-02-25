@@ -250,17 +250,21 @@ fn shorten_abs(no: f64) -> String {
 }
 
 fn fetch_price_map(portfolio: &Portfolio) -> Result<HashMap<String, f64>, Box<dyn Error>> {
-	let portfolio_symbols = portfolio.funded_symbols().into_iter().collect();
-	let mut symbol_map = smarket::yf::price_assets(&portfolio_symbols)?
-		.iter()
-		.map(|(symbol, result)| {
-			let usd_price = match result {
-				PricingResult::Priced { usd_price, .. } => *usd_price,
-				_ => panic!("missing price")
-			};
-			(symbol.to_string(), usd_price.as_f64())
-		})
-		.collect::<HashMap<String, _>>();
+	let portfolio_symbols = portfolio.funded_symbols().into_iter().collect::<Vec<_>>();
+	let mut symbol_map = if portfolio_symbols.is_empty() {
+		HashMap::new()
+	} else {
+		smarket::yf::price_assets(&portfolio_symbols)?
+			.iter()
+			.map(|(symbol, result)| {
+				let usd_price = match result {
+					PricingResult::Priced { usd_price, .. } => *usd_price,
+					_ => panic!("missing price")
+				};
+				(symbol.to_string(), usd_price.as_f64())
+			})
+			.collect::<HashMap<String, _>>()
+	};
 	symbol_map.insert("USD".to_string(), 1.0);
 	Ok(symbol_map)
 }
