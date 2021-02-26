@@ -9,9 +9,14 @@ subcommands:
       about: Shows the status of the current pot
   - lots:
       about: Lists lots
-      subcommands:
-        - symbols:
-            about: Lists symbols from all lots in alphabetical order
+  - assets:
+      about: Lists assets held in the pot
+      args:
+        - deep:
+            help: Expands the list to include sub-pot symbols
+            long: deep
+            required: false
+            takes_value: false
   - cash:
       about: Prints the free cash value
   - ramp:

@@ -42,12 +42,11 @@ fn main() -> Result<(), Box<dyn Error>> {
 		cli::status()?;
 	} else if let Some(_) = matches.subcommand_matches("value") {
 		cli::value()?;
-	} else if let Some(lots_matches) = matches.subcommand_matches("lots") {
-		if let Some(_) = lots_matches.subcommand_matches("symbols") {
-			cli::lots_symbols()?;
-		} else {
-			cli::lots()?;
-		}
+	} else if let Some(_) = matches.subcommand_matches("lots") {
+		cli::lots()?;
+	} else if let Some(matches) = matches.subcommand_matches("assets") {
+		let go_deep = matches.is_present("deep");
+		cli::assets(go_deep)?;
 	} else if let Some(_) = matches.subcommand_matches("cash") {
 		cli::cash()?;
 	} else if let Some(ramp_matches) = matches.subcommand_matches("ramp") {

@@ -8,6 +8,17 @@ use crate::asset_tag::{AssetTag, equities_and_pots};
 use crate::core::Ramp;
 use crate::pot::{FolderPot, Pot};
 
+pub fn init() -> Result<(), Box<dyn Error>> {
+	let pot = FolderPot::new();
+	if pot.is_not_initialized() {
+		pot.init()?;
+		println!("Initialized pot in {}", pot.path().display());
+	} else {
+		println!("Skipped reinitializing existing pot in {}", pot.path().display());
+	}
+	Ok(())
+}
+
 pub fn set_cash(value: f64) -> Result<(), Box<dyn Error>> {
 	let pot = FolderPot::new();
 	pot.write_cash(value)
@@ -188,32 +199,17 @@ pub fn lots() -> Result<(), Box<dyn Error>> {
 	Ok(())
 }
 
-pub fn lots_symbols() -> Result<(), Box<dyn Error>> {
+pub fn assets(go_deep: bool) -> Result<(), Box<dyn Error>> {
 	let pot = FolderPot::new();
-	let lots = pot.read_lots()?;
-	let unique_symbols = lots
-		.iter()
-		.filter(|lot| lot.share_count.as_f64() > 0.0)
-		.map(|lot| lot.asset_tag.as_str().to_string())
-		.collect::<HashSet<_>>();
-	let sorted_symbols = {
-		let mut v = unique_symbols.into_iter().collect::<Vec<_>>();
-		v.sort();
-		v
-	};
-	let line: String = sorted_symbols.join(",");
-	println!("{}", line);
-	Ok(())
-}
-
-pub fn init() -> Result<(), Box<dyn Error>> {
-	let pot = FolderPot::new();
-	if pot.is_not_initialized() {
-		pot.init()?;
-		println!("Initialized pot in {}", pot.path().display());
+	let unique_assets = if go_deep {
+		pot.read_deep_lot_assets()?
 	} else {
-		println!("Skipped reinitializing existing pot in {}", pot.path().display());
-	}
+		pot.read_lot_assets()?
+	};
+	let mut symbols = unique_assets.iter().map(AssetTag::to_string).collect::<Vec<_>>();
+	symbols.sort();
+	let line: String = symbols.join(",");
+	println!("{}", line);
 	Ok(())
 }
 

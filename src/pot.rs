@@ -1,3 +1,4 @@
+use std::collections::HashSet;
 use std::error::Error;
 use std::fs::File;
 use std::io::{Read, Write};
@@ -11,6 +12,7 @@ use crate::lot::Lot;
 pub trait Pot {
 	fn is_not_initialized(&self) -> bool;
 	fn init(&self) -> Result<(), Box<dyn Error>>;
+	fn subpot(&self, name: &str) -> Self;
 
 	fn read_cash(&self) -> Result<f64, Box<dyn Error>>;
 	fn write_cash(&self, value: f64) -> Result<(), Box<dyn Error>>;
@@ -26,6 +28,9 @@ pub trait Pot {
 
 	fn read_targets(&self) -> Result<Vec<AssetTag>, Box<dyn Error>>;
 	fn write_targets(&self, targets: &Vec<AssetTag>) -> Result<(), Box<dyn Error>>;
+
+	fn read_lot_assets(&self) -> Result<HashSet<AssetTag>, Box<dyn Error>>;
+	fn read_deep_lot_assets(&self) -> Result<HashSet<AssetTag>, Box<dyn Error>>;
 }
 
 impl Pot for FolderPot {
@@ -36,6 +41,12 @@ impl Pot for FolderPot {
 		self.write_ramp(Ramp::Golden)?;
 		Ok(())
 	}
+
+	fn subpot(&self, name: &str) -> Self {
+		let sub_path = self.path.join(name);
+		FolderPot { path: sub_path }
+	}
+
 	fn read_cash(&self) -> Result<f64, Box<dyn Error>> {
 		disk::read_f64(&self.cash_file())
 	}
@@ -122,6 +133,29 @@ impl Pot for FolderPot {
 		let mut file = File::create(self.team_file())?;
 		file.write_all(targets.as_bytes())?;
 		Ok(())
+	}
+
+	fn read_lot_assets(&self) -> Result<HashSet<AssetTag>, Box<dyn Error>> {
+		let set = self.read_lots()?
+			.iter()
+			.filter(|lot| lot.share_count.as_f64() > 0.0)
+			.map(|lot| &lot.asset_tag)
+			.cloned()
+			.collect::<HashSet<_>>();
+		Ok(set)
+	}
+
+	fn read_deep_lot_assets(&self) -> Result<HashSet<AssetTag>, Box<dyn Error>> {
+		let top_assets = self.read_lot_assets()?;
+		let (sub_tags, top_tags): (Vec<AssetTag>, Vec<AssetTag>) = top_assets.into_iter().partition(AssetTag::is_subpot);
+		let mut deep_assets = HashSet::new();
+		deep_assets.extend(top_tags);
+		for tag in sub_tags {
+			let subpot = self.subpot(tag.as_folder_name());
+			let subpot_assets = subpot.read_deep_lot_assets()?;
+			deep_assets.extend(subpot_assets);
+		}
+		Ok(deep_assets)
 	}
 }
 

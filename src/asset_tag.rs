@@ -30,6 +30,12 @@ pub enum AssetTag {
 }
 
 impl AssetTag {
+	pub fn is_subpot(&self) -> bool {
+		match self {
+			AssetTag::Pot(_) => true,
+			_ => false,
+		}
+	}
 	pub fn as_str(&self) -> &str {
 		match self {
 			AssetTag::Equity(s) => s.as_str(),
@@ -37,6 +43,16 @@ impl AssetTag {
 			AssetTag::Usd => "USD",
 		}
 	}
+	pub fn as_folder_name(&self) -> &str {
+		match self {
+			AssetTag::Pot(s) => &s[1..],
+			_ => panic!("Wrong variant")
+		}
+	}
+}
+
+impl ToString for AssetTag {
+	fn to_string(&self) -> String { self.as_str().to_string() }
 }
 
 impl<T: AsRef<str>> From<T> for AssetTag {
