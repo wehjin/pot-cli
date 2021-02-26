@@ -85,6 +85,9 @@ fn main() -> Result<(), Box<dyn Error>> {
 			let share_count = matches.value_of("SHARECOUNT").expect("sharecount").parse::<f64>()?;
 			let uid = matches.value_of("UID").map_or(Ok(None), |it| it.parse::<u64>().map(Some))?;
 			cli::add_lot(custody, &asset, share_count, uid)?;
+		} else if let Some(matches) = matches.subcommand_matches("target") {
+			let symbol = matches.value_of("SYMBOL").expect("symbol");
+			cli::add_targets(symbol)?;
 		} else {
 			println!("Add what?");
 		}

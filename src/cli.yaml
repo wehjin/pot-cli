@@ -60,6 +60,12 @@ subcommands:
   - add:
       about: Adds an item to the pot
       subcommands:
+        - target:
+            about: Adds a target to the pot
+            args:
+              - SYMBOL:
+                  help: Sets the target symbol
+                  required: true
         - lot:
             about: Adds a lot to the pot
             args:
