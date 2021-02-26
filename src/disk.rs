@@ -50,36 +50,34 @@ pub fn write_ramp(ramp: Ramp) -> Result<(), Box<dyn Error>> {
 	write_string(RAMP_TXT, ramp.as_str())
 }
 
-pub fn read_targets(pot: &FolderPot) -> Result<Vec<String>, Box<dyn Error>> {
+pub fn read_targets(pot: &FolderPot) -> Result<Vec<AssetTag>, Box<dyn Error>> {
 	let mut file_s = String::new();
 	let file_open = pot.open_team_file();
 	if file_open.is_err() {
 		Ok(Vec::new())
 	} else {
 		file_open?.read_to_string(&mut file_s)?;
-		let symbols = file_s
+		let asset_tags = file_s
 			.split("\n")
 			.into_iter()
-			.map(|s| {
-				let s = s.trim();
-				s.to_uppercase()
-			})
-			.filter(|s| !s.is_empty())
+			.map(|s| AssetTag::from(s))
 			.collect::<Vec<_>>();
-		Ok(symbols)
+		Ok(asset_tags)
 	}
 }
 
-pub fn write_targets(targets: &Vec<String>, pot: &FolderPot) -> Result<(), Box<dyn Error>> {
-	let targets: String = targets.join("\n");
+pub fn write_targets(targets: &Vec<AssetTag>, pot: &FolderPot) -> Result<(), Box<dyn Error>> {
+	let symbols = targets.iter().map(|tag| tag.as_str().to_string()).collect::<Vec<String>>();
+	let targets: String = symbols.join("\n");
 	let mut file = pot.create_team_file()?;
 	file.write_all(targets.as_bytes())?;
 	Ok(())
 }
 
 pub fn read_shares(custodian: &str, symbol: &str) -> Result<f64, Box<dyn Error>> {
+	let tag = AssetTag::from(symbol);
 	let lots = read_lots()?;
-	let lot = lots.into_iter().find(|lot| lot.has_symbol(symbol) && lot.has_custodian(custodian));
+	let lot = lots.into_iter().find(|lot| lot.has_tag(&tag) && lot.has_custodian(custodian));
 	let count = if let Some(lot) = lot {
 		lot.share_count.as_f64()
 	} else {
@@ -89,9 +87,10 @@ pub fn read_shares(custodian: &str, symbol: &str) -> Result<f64, Box<dyn Error>>
 }
 
 pub fn write_shares(custodian: &str, symbol: &str, count: f64) -> Result<u64, Box<dyn Error>> {
+	let tag = AssetTag::from(symbol);
 	let mut lot_id: Option<u64> = None;
 	let new_lots = read_lots()?.into_iter().map(|lot| {
-		if lot.has_symbol(symbol) && lot.has_custodian(custodian) {
+		if lot.has_tag(&tag) && lot.has_custodian(custodian) {
 			lot_id = Some(lot.uid);
 			lot.with_share_count(count)
 		} else {

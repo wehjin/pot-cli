@@ -26,7 +26,7 @@ impl Lot {
 	}
 	pub fn symbol_string(&self) -> AssetTag { self.asset_tag.clone() }
 	pub fn is_funded(&self) -> bool { self.share_count.is_non_zero() }
-	pub fn has_symbol(&self, symbol: &str) -> bool { self.asset_tag.has_symbol(symbol) }
+	pub fn has_tag(&self, tag: &AssetTag) -> bool { &self.asset_tag == tag }
 	pub fn has_custodian(&self, custodian: &str) -> bool { custodian == self.custodian.as_str() }
 
 	pub fn with_share_count(&self, count: f64) -> Self {

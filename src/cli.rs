@@ -36,23 +36,25 @@ pub fn targets() -> Result<(), Box<dyn Error>> {
 	let pot = FolderPot::new();
 	let targets = disk::read_targets(&pot)?;
 	print::title("TARGETS");
-	targets.iter().for_each(|s| { println!("{}", s); });
+	targets.iter().for_each(|tag| {
+		println!("{}", tag.as_str());
+	});
 	Ok(())
 }
 
 pub fn add_targets(symbols: &str) -> Result<(), Box<dyn Error>> {
 	let pot = FolderPot::new();
-	let symbols = symbols
+	let asset_tags = symbols
 		.split(",")
-		.map(|s| s.trim().to_uppercase())
+		.map(|s| AssetTag::from(s.trim()))
 		.collect::<Vec<_>>();
 	let mut targets = disk::read_targets(&pot)?;
 	let mut added = Vec::new();
-	symbols.iter().rev().for_each(|symbol| {
-		let position = targets.iter().position(|t| t == symbol);
+	asset_tags.iter().rev().for_each(|tag| {
+		let position = targets.iter().position(|t| t == tag);
 		if position.is_none() {
-			targets.insert(0, symbol.to_string());
-			added.insert(0, symbol.to_string());
+			targets.insert(0, tag.clone());
+			added.insert(0, tag.as_str().to_string());
 		}
 	});
 	if !added.is_empty() {

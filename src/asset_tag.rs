@@ -19,9 +19,6 @@ impl AssetTag {
 			AssetTag::Usd => "USD",
 		}
 	}
-	pub fn has_symbol(&self, symbol: &str) -> bool {
-		symbol == self.as_str()
-	}
 }
 
 
