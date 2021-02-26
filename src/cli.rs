@@ -1,5 +1,4 @@
 use std::collections::{HashMap, HashSet};
-use std::env;
 use std::error::Error;
 
 use smarket::yf::PricingResult;
@@ -7,34 +6,38 @@ use smarket::yf::PricingResult;
 use crate::{Custodian, disk, Lot, Portfolio, print, ShareCount};
 use crate::asset_tag::{AssetTag, equities_and_pots};
 use crate::core::Ramp;
-use crate::pot::FolderPot;
+use crate::pot::{FolderPot, Pot};
 
 pub fn set_cash(value: f64) -> Result<(), Box<dyn Error>> {
-	disk::write_cash(value)
+	let pot = FolderPot::new();
+	pot.write_cash(value)
 }
 
 pub fn cash() -> Result<(), Box<dyn Error>> {
-	let cash_value = disk::read_cash()?;
+	let pot = FolderPot::new();
+	let cash_value = pot.read_cash()?;
 	println!("${:.2}", cash_value);
 	Ok(())
 }
 
 pub fn set_ramp(ramp_s: &str) -> Result<(), Box<dyn Error>> {
 	let ramp = Ramp::from_str(ramp_s);
-	disk::write_ramp(ramp)?;
+	let pot = FolderPot::new();
+	pot.write_ramp(ramp)?;
 	println!("{}", ramp_s);
 	Ok(())
 }
 
 pub fn ramp() -> Result<(), Box<dyn Error>> {
-	let ramp = disk::read_ramp()?;
+	let pot = FolderPot::new();
+	let ramp = pot.read_ramp()?;
 	println!("{}", ramp.as_str());
 	Ok(())
 }
 
 pub fn targets() -> Result<(), Box<dyn Error>> {
 	let pot = FolderPot::new();
-	let targets = disk::read_targets(&pot)?;
+	let targets = pot.read_targets()?;
 	print::title("TARGETS");
 	targets.iter().for_each(|tag| {
 		println!("{}", tag.as_str());
@@ -48,7 +51,7 @@ pub fn add_targets(symbols: &str) -> Result<(), Box<dyn Error>> {
 		.split(",")
 		.map(|s| AssetTag::from(s.trim()))
 		.collect::<Vec<_>>();
-	let mut targets = disk::read_targets(&pot)?;
+	let mut targets = pot.read_targets()?;
 	let mut added = Vec::new();
 	asset_tags.iter().rev().for_each(|tag| {
 		let position = targets.iter().position(|t| t == tag);
@@ -58,20 +61,21 @@ pub fn add_targets(symbols: &str) -> Result<(), Box<dyn Error>> {
 		}
 	});
 	if !added.is_empty() {
-		disk::write_targets(&targets, &pot)?;
+		pot.write_targets(&targets)?;
 	}
 	println!("{}", added.join(","));
 	Ok(())
 }
 
 pub fn shares(custodian: &str, symbol: &str, count: Option<f64>) -> Result<(), Box<dyn Error>> {
+	let pot = FolderPot::new();
 	match count {
 		None => {
-			let count = disk::read_shares(&custodian, &symbol)?;
+			let count = pot.read_shares(&custodian, &symbol)?;
 			println!("{}", count);
 		}
 		Some(count) => {
-			let uid = disk::write_shares(&custodian, &symbol, count)?;
+			let uid = pot.write_shares(&custodian, &symbol, count)?;
 			println_uid(uid);
 		}
 	}
@@ -79,8 +83,9 @@ pub fn shares(custodian: &str, symbol: &str, count: Option<f64>) -> Result<(), B
 }
 
 pub fn add_lot(custody: &str, asset_tag: &AssetTag, share_count: f64, uid: Option<u64>) -> Result<(), Box<dyn Error>> {
+	let pot = FolderPot::new();
 	let uid = uid.unwrap_or_else(Lot::random_uid);
-	let mut lots = disk::read_lots()?;
+	let mut lots = pot.read_lots()?;
 	let existing = lots.iter().find(|it| it.uid == uid);
 	if existing.is_some() {
 		println!("skip: Lot {:016} already exists", uid)
@@ -96,7 +101,7 @@ pub fn add_lot(custody: &str, asset_tag: &AssetTag, share_count: f64, uid: Optio
 			uid,
 		};
 		lots.extend(vec![lot]);
-		disk::write_lots(&lots)?;
+		pot.write_lots(&lots)?;
 		println_uid(uid);
 	}
 	Ok(())
@@ -171,8 +176,9 @@ pub fn status() -> Result<(), Box<dyn Error>> {
 }
 
 pub fn lots() -> Result<(), Box<dyn Error>> {
+	let pot = FolderPot::new();
 	println!("{:16}  {:10}  {:8}  {:8}", "LOT ID", "CUSTODY", "SYMBOL", "COUNT");
-	let lots = disk::read_lots()?;
+	let lots = pot.read_lots()?;
 	for lot in lots {
 		println!(
 			"{:016x}  {:10}  {:8}  {:8}",
@@ -183,7 +189,8 @@ pub fn lots() -> Result<(), Box<dyn Error>> {
 }
 
 pub fn lots_symbols() -> Result<(), Box<dyn Error>> {
-	let lots = disk::read_lots()?;
+	let pot = FolderPot::new();
+	let lots = pot.read_lots()?;
 	let unique_symbols = lots
 		.iter()
 		.filter(|lot| lot.share_count.as_f64() > 0.0)
@@ -200,12 +207,12 @@ pub fn lots_symbols() -> Result<(), Box<dyn Error>> {
 }
 
 pub fn init() -> Result<(), Box<dyn Error>> {
-	let current_folder = env::current_dir()?;
-	if disk::is_not_initialized() {
-		disk::init()?;
-		println!("Initialized pot in {}", current_folder.display());
+	let pot = FolderPot::new();
+	if pot.is_not_initialized() {
+		pot.init()?;
+		println!("Initialized pot in {}", pot.path().display());
 	} else {
-		println!("Skipped reinitializing existing pot in {}", current_folder.display());
+		println!("Skipped reinitializing existing pot in {}", pot.path().display());
 	}
 	Ok(())
 }

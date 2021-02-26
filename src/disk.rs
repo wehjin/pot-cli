@@ -1,147 +1,40 @@
 use std::error::Error;
 use std::fs::File;
 use std::io::{Read, Write};
+use std::path::Path;
 
 use crate::asset_tag::AssetTag;
-use crate::core::Ramp;
 use crate::ladder::Ladder;
-use crate::Lot;
 use crate::portfolio::Portfolio;
-use crate::pot::FolderPot;
-
-const LOTS_CSV: &str = "lots.csv";
-const CASH_TXT: &str = "cash.txt";
-const RAMP_TXT: &str = "ramp.txt";
-
-pub fn is_not_initialized() -> bool {
-	csv::Reader::from_path(LOTS_CSV).is_err()
-}
-
-pub fn init() -> Result<(), Box<dyn Error>> {
-	let lots: Vec<Lot> = Vec::new();
-	let mut writer = csv::Writer::from_path(LOTS_CSV)?;
-	writer.serialize(lots)?;
-	write_cash(0.0)?;
-	write_ramp(Ramp::Golden)?;
-	Ok(())
-}
+use crate::pot::{FolderPot, Pot};
 
 pub fn read_portfolio() -> Result<Portfolio, Box<dyn Error>> {
+	let pot = FolderPot::new();
 	let portfolio = Portfolio {
-		lots: read_lots()?,
-		free_cash: read_cash()?,
+		lots: pot.read_lots()?,
+		free_cash: pot.read_cash()?,
 	};
 	Ok(portfolio)
 }
 
 pub fn read_ladder(pot: &FolderPot) -> Result<Ladder, Box<dyn Error>> {
-	let targets = read_targets(pot)?.into_iter().map(AssetTag::from).collect::<Vec<_>>();
-	let ramp = read_ramp()?;
+	let targets = pot.read_targets()?.into_iter().map(AssetTag::from).collect::<Vec<_>>();
+	let ramp = pot.read_ramp()?;
 	Ok(Ladder { targets, ramp })
 }
 
-pub fn read_ramp() -> Result<Ramp, Box<dyn Error>> {
-	let string = read_string(RAMP_TXT).unwrap_or("golden".to_string());
-	let ramp = Ramp::from_str(&string);
-	Ok(ramp)
-}
-
-pub fn write_ramp(ramp: Ramp) -> Result<(), Box<dyn Error>> {
-	write_string(RAMP_TXT, ramp.as_str())
-}
-
-pub fn read_targets(pot: &FolderPot) -> Result<Vec<AssetTag>, Box<dyn Error>> {
-	let mut file_s = String::new();
-	let file_open = pot.open_team_file();
-	if file_open.is_err() {
-		Ok(Vec::new())
-	} else {
-		file_open?.read_to_string(&mut file_s)?;
-		let asset_tags = file_s
-			.split("\n")
-			.into_iter()
-			.map(|s| AssetTag::from(s))
-			.collect::<Vec<_>>();
-		Ok(asset_tags)
-	}
-}
-
-pub fn write_targets(targets: &Vec<AssetTag>, pot: &FolderPot) -> Result<(), Box<dyn Error>> {
-	let symbols = targets.iter().map(|tag| tag.as_str().to_string()).collect::<Vec<String>>();
-	let targets: String = symbols.join("\n");
-	let mut file = pot.create_team_file()?;
-	file.write_all(targets.as_bytes())?;
-	Ok(())
-}
-
-pub fn read_shares(custodian: &str, symbol: &str) -> Result<f64, Box<dyn Error>> {
-	let tag = AssetTag::from(symbol);
-	let lots = read_lots()?;
-	let lot = lots.into_iter().find(|lot| lot.has_tag(&tag) && lot.has_custodian(custodian));
-	let count = if let Some(lot) = lot {
-		lot.share_count.as_f64()
-	} else {
-		0.0
-	};
-	Ok(count)
-}
-
-pub fn write_shares(custodian: &str, symbol: &str, count: f64) -> Result<u64, Box<dyn Error>> {
-	let tag = AssetTag::from(symbol);
-	let mut lot_id: Option<u64> = None;
-	let new_lots = read_lots()?.into_iter().map(|lot| {
-		if lot.has_tag(&tag) && lot.has_custodian(custodian) {
-			lot_id = Some(lot.uid);
-			lot.with_share_count(count)
-		} else {
-			lot
-		}
-	}).collect::<Vec<_>>();
-	write_lots(&new_lots)?;
-	Ok(lot_id.expect("lot it"))
-}
-
-pub fn read_cash() -> Result<f64, Box<dyn Error>> {
-	read_f64(CASH_TXT)
-}
-
-pub fn write_cash(value: f64) -> Result<(), Box<dyn Error>> {
-	let value_s = value.to_string();
-	write_string(CASH_TXT, &value_s)
-}
-
-pub fn read_lots() -> Result<Vec<Lot>, Box<dyn Error>> {
-	let mut lots: Vec<Lot> = Vec::new();
-	let mut rdr = csv::Reader::from_path(LOTS_CSV)?;
-	for result in rdr.deserialize() {
-		let lot: Lot = result?;
-		lots.insert(0, lot);
-	}
-	lots.reverse();
-	Ok(lots)
-}
-
-pub fn write_lots(lots: &Vec<Lot>) -> Result<(), Box<dyn Error>> {
-	let mut wtr = csv::Writer::from_path(LOTS_CSV)?;
-	for lot in lots {
-		wtr.serialize(lot)?;
-	}
-	wtr.flush()?;
-	Ok(())
-}
-
-fn read_f64(path: &str) -> Result<f64, Box<dyn Error>> {
+pub fn read_f64(path: &Path) -> Result<f64, Box<dyn Error>> {
 	let cash = read_string(path)?.parse::<f64>()?;
 	Ok(cash)
 }
 
-fn read_string(path: &str) -> Result<String, Box<dyn Error>> {
+pub fn read_string(path: &Path) -> Result<String, Box<dyn Error>> {
 	let mut s = String::new();
 	File::open(path)?.read_to_string(&mut s)?;
 	Ok(s)
 }
 
-fn write_string(path: &str, string: &str) -> Result<(), Box<dyn Error>> {
+pub fn write_string(path: &Path, string: &str) -> Result<(), Box<dyn Error>> {
 	File::create(path)?.write_all(string.as_bytes())?;
 	Ok(())
 }
