@@ -5,7 +5,7 @@ use std::error::Error;
 use smarket::yf::PricingResult;
 
 use crate::{Custodian, disk, Lot, Portfolio, print, ShareCount};
-use crate::asset_tag::AssetTag;
+use crate::asset_tag::{AssetTag, equities_and_pots};
 use crate::core::Ramp;
 use crate::pot::FolderPot;
 
@@ -78,16 +78,20 @@ pub fn shares(custodian: &str, symbol: &str, count: Option<f64>) -> Result<(), B
 	Ok(())
 }
 
-pub fn add_lot(custody: &str, asset_tag: &str, share_count: f64, uid: Option<u64>) -> Result<(), Box<dyn Error>> {
+pub fn add_lot(custody: &str, asset_tag: &AssetTag, share_count: f64, uid: Option<u64>) -> Result<(), Box<dyn Error>> {
 	let uid = uid.unwrap_or_else(Lot::random_uid);
 	let mut lots = disk::read_lots()?;
 	let existing = lots.iter().find(|it| it.uid == uid);
 	if existing.is_some() {
 		println!("skip: Lot {:016} already exists", uid)
 	} else {
+		let share_count = match asset_tag {
+			AssetTag::Pot(_) => if share_count > 0.0 { 1.0 } else { 0.0 }
+			_ => share_count
+		};
 		let lot = Lot {
 			custodian: Custodian(custody.to_string()),
-			asset_tag: asset_tag.into(),
+			asset_tag: asset_tag.to_owned(),
 			share_count: ShareCount(share_count),
 			uid,
 		};
@@ -104,7 +108,7 @@ fn println_uid(uid: u64) {
 
 pub fn value() -> Result<(), Box<dyn Error>> {
 	let portfolio = disk::read_portfolio()?;
-	let prices = fetch_price_map(&portfolio)?;
+	let prices = fetch_prices(&portfolio)?;
 	let value = portfolio.market_value(&prices);
 	println!("{}", shorten_dollars(value));
 	Ok(())
@@ -128,8 +132,8 @@ pub fn status() -> Result<(), Box<dyn Error>> {
 		portion_targets
 	};
 	let lot_counts = portfolio.share_counts();
-	let symbol_prices = fetch_price_map(&portfolio)?;
-	let mut market_values = portfolio.market_values(&symbol_prices);
+	let asset_prices = fetch_prices(&portfolio)?;
+	let mut market_values = portfolio.market_values(&asset_prices);
 	for ref target_symbol in ladder.target_symbols() {
 		if !market_values.contains_key(target_symbol) {
 			market_values.insert(target_symbol.clone(), 0.0);
@@ -259,30 +263,46 @@ fn shorten_abs(no: f64) -> String {
 	quantity
 }
 
-fn fetch_price_map(portfolio: &Portfolio) -> Result<HashMap<AssetTag, f64>, Box<dyn Error>> {
+fn fetch_prices(portfolio: &Portfolio) -> Result<HashMap<AssetTag, f64>, Box<dyn Error>> {
 	let portfolio_assets = portfolio.funded_symbols().into_iter().collect::<Vec<_>>();
-	let mut asset_price = if portfolio_assets.is_empty() {
+	let (equities, pots) = equities_and_pots(portfolio_assets);
+	let equity_prices = fetch_equity_prices(equities)?;
+	let subpot_prices = fetch_pot_prices(pots)?;
+	let mut prices = HashMap::new();
+	prices.insert(AssetTag::Usd, 1.0);
+	prices.extend(equity_prices);
+	prices.extend(subpot_prices);
+	Ok(prices)
+}
+
+fn fetch_pot_prices(pots: Vec<AssetTag>) -> Result<HashMap<AssetTag, f64>, Box<dyn Error>> {
+	let prices = pots
+		.into_iter()
+		.map(|pot| (pot, 42.0))
+		.collect::<HashMap<AssetTag, _>>();
+	Ok(prices)
+}
+
+fn fetch_equity_prices(equities: Vec<AssetTag>) -> Result<HashMap<AssetTag, f64>, Box<dyn Error>> {
+	let prices_by_asset = if equities.is_empty() {
 		HashMap::new()
 	} else {
-		let symbol_asset = portfolio_assets
+		let assets_by_symbol = equities
 			.iter()
-			.map(|it| (it.as_str().to_string(), it.clone())).collect::<HashMap<String, _>>();
-		let symbols = symbol_asset.keys().cloned().collect::<Vec<_>>();
-		let symbol_price = smarket::yf::price_assets(&symbols)?
+			.map(|it| (it.as_str().to_string(), it.clone()))
+			.collect::<HashMap<String, _>>();
+		let symbols = assets_by_symbol.keys().cloned().collect::<Vec<_>>();
+		smarket::yf::price_assets(&symbols)?
 			.iter()
 			.map(|(symbol, result)| {
 				let usd_price = match result {
 					PricingResult::Priced { usd_price, .. } => *usd_price,
 					_ => panic!("missing price")
 				};
-				(symbol.to_string(), usd_price.as_f64())
+				let asset_tag = assets_by_symbol.get(symbol).expect("asset-tag").to_owned();
+				(asset_tag, usd_price.as_f64())
 			})
-			.collect::<HashMap<String, _>>();
-		symbol_price.into_iter().map(|(symbol, price)| {
-			let asset_tag = symbol_asset.get(&symbol).expect("asset-tag").to_owned();
-			(asset_tag, price)
-		}).collect::<HashMap<AssetTag, _>>()
+			.collect::<HashMap<AssetTag, _>>()
 	};
-	asset_price.insert(AssetTag::Usd, 1.0);
-	Ok(asset_price)
+	Ok(prices_by_asset)
 }

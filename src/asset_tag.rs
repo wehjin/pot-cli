@@ -4,6 +4,24 @@ use std::fmt::Formatter;
 use serde::{de, Deserialize, Deserializer, Serialize, Serializer};
 use serde::de::Visitor;
 
+pub fn equities_and_pots(tags: Vec<AssetTag>) -> (Vec<AssetTag>, Vec<AssetTag>) {
+	let (equities, non_equities): (Vec<AssetTag>, Vec<AssetTag>) = tags.into_iter().partition(|tag|
+		match tag {
+			AssetTag::Equity(_) => true,
+			AssetTag::Pot(_) => false,
+			AssetTag::Usd => false,
+		}
+	);
+	let (pots, _): (Vec<AssetTag>, Vec<AssetTag>) = non_equities.into_iter().partition(|tag|
+		match tag {
+			AssetTag::Equity(_) => false,
+			AssetTag::Pot(_) => true,
+			AssetTag::Usd => false,
+		}
+	);
+	(equities, pots)
+}
+
 #[derive(Hash, Ord, PartialOrd, Eq, PartialEq, Clone, Debug)]
 pub enum AssetTag {
 	Equity(String),
@@ -20,7 +38,6 @@ impl AssetTag {
 		}
 	}
 }
-
 
 impl<T: AsRef<str>> From<T> for AssetTag {
 	fn from(t: T) -> Self {

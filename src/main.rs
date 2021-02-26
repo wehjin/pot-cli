@@ -14,6 +14,8 @@ use serde::{Deserialize, Serialize};
 use lot::*;
 use portfolio::*;
 
+use crate::asset_tag::AssetTag;
+
 mod asset_tag;
 mod cli;
 mod core;
@@ -57,7 +59,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 		}
 	} else if let Some(targets_matches) = matches.subcommand_matches("targets") {
 		if let Some(add_matches) = targets_matches.subcommand_matches("add") {
-			let symbols = add_matches.value_of("SYMBOLS").expect("symbol");
+			let symbols = add_matches.value_of("SYMBOLS").expect("symbols");
 			cli::add_targets(symbols)?;
 		} else {
 			cli::targets()?;
@@ -78,10 +80,11 @@ fn main() -> Result<(), Box<dyn Error>> {
 	} else if let Some(matches) = matches.subcommand_matches("add") {
 		if let Some(matches) = matches.subcommand_matches("lot") {
 			let custody = matches.value_of("CUSTODY").expect("custody");
-			let symbol = matches.value_of("SYMBOL").expect("symbol").to_uppercase();
+			let symbol = matches.value_of("SYMBOL").expect("symbol");
+			let asset = AssetTag::from(symbol);
 			let share_count = matches.value_of("SHARECOUNT").expect("sharecount").parse::<f64>()?;
 			let uid = matches.value_of("UID").map_or(Ok(None), |it| it.parse::<u64>().map(Some))?;
-			cli::add_lot(custody, &symbol, share_count, uid)?;
+			cli::add_lot(custody, &asset, share_count, uid)?;
 		} else {
 			println!("Add what?");
 		}
