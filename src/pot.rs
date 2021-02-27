@@ -157,7 +157,8 @@ impl Pot for FolderPot {
 			let asset_tags = file_s
 				.split("\n")
 				.into_iter()
-				.map(|s| AssetTag::from(s))
+				.filter(|s| !s.trim().is_empty())
+				.map(|s| AssetTag::from(s.trim()))
 				.collect::<Vec<_>>();
 			Ok(asset_tags)
 		}
