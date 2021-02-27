@@ -17,13 +17,6 @@ impl Portfolio {
 		set.insert(AssetTag::Usd);
 		set
 	}
-	pub fn funded_symbols(&self) -> HashSet<AssetTag> {
-		self.share_counts()
-			.into_iter()
-			.filter(|(_, count)| *count > 0.0)
-			.map(|(asset_tag, _)| asset_tag)
-			.collect()
-	}
 	pub fn share_counts(&self) -> HashMap<AssetTag, f64> {
 		let mut map: HashMap<AssetTag, f64> = HashMap::new();
 		for lot in &self.lots {
@@ -37,15 +30,26 @@ impl Portfolio {
 	}
 	pub fn market_values(&self, prices: &HashMap<AssetTag, f64>) -> HashMap<AssetTag, f64> {
 		let share_counts = self.share_counts();
-		let mut map = share_counts.into_iter().map(|(symbol, count)| {
-			if count > 0.0 {
-				let price = prices.get(&symbol).cloned().expect("price");
-				(symbol, price * count)
-			} else {
-				(symbol, 0.0)
-			}
-		}).collect::<HashMap<AssetTag, _>>();
+		let mut map = share_counts
+			.into_iter()
+			.map(|(asset, count)| market_value(asset, count, prices))
+			.collect::<HashMap<AssetTag, _>>();
 		map.insert(AssetTag::Usd, self.free_cash);
 		map
+	}
+	pub fn market_value(&self, prices: &HashMap<AssetTag, f64>) -> f64 {
+		self.market_values(prices)
+			.into_iter()
+			.map(|(_, value)| value)
+			.sum()
+	}
+}
+
+fn market_value(asset: AssetTag, count: f64, prices: &HashMap<AssetTag, f64>) -> (AssetTag, f64) {
+	if count > 0.0 {
+		let price = prices.get(&asset).cloned().expect("price");
+		(asset, price * count)
+	} else {
+		(asset, 0.0)
 	}
 }

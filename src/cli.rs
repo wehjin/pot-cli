@@ -3,8 +3,8 @@ use std::error::Error;
 
 use smarket::yf::PricingResult;
 
-use crate::{Custodian, disk, Lot, Portfolio, print, ShareCount};
-use crate::asset_tag::{AssetTag, equities_and_pots};
+use crate::{Custodian, disk, Lot, print, ShareCount};
+use crate::asset_tag::AssetTag;
 use crate::core::Ramp;
 use crate::pot::{FolderPot, Pot};
 
@@ -123,20 +123,22 @@ fn println_uid(uid: u64) {
 }
 
 pub fn value(verbose: bool) -> Result<(), Box<dyn Error>> {
-	let portfolio = disk::read_portfolio()?;
-	let prices = fetch_prices(&portfolio)?;
-	let market_values = portfolio.market_values(&prices);
-	let value = market_values.iter().map(|(_, value)| *value).sum();
+	let pot = FolderPot::new();
+	let prices = fetch_prices(&pot)?;
 	if verbose {
+		let market_values = pot.read_market_values(&prices)?;
 		let mut pairs = market_values.into_iter().collect::<Vec<_>>();
 		pairs.sort_by_key(|x| x.0.to_owned());
 		print::title("Market Values");
+		let mut total = 0.0;
 		for (asset, value) in pairs {
+			total += value;
 			println!("{:8}  {:>8}", asset.as_str(), shorten_dollars(value));
 		}
 		println!("{:=<18}", "");
-		println!("Total: {}", shorten_dollars(value));
+		println!("Total: {}", shorten_dollars(total));
 	} else {
+		let value = pot.read_market_value(&prices)?;
 		println!("{}", shorten_dollars(value));
 	}
 	Ok(())
@@ -160,7 +162,7 @@ pub fn status() -> Result<(), Box<dyn Error>> {
 		portion_targets
 	};
 	let lot_counts = portfolio.share_counts();
-	let asset_prices = fetch_prices(&portfolio)?;
+	let asset_prices = fetch_prices(&pot)?;
 	let mut market_values = portfolio.market_values(&asset_prices);
 	for ref target_symbol in ladder.target_symbols() {
 		if !market_values.contains_key(target_symbol) {
@@ -278,23 +280,22 @@ fn shorten_abs(no: f64) -> String {
 	quantity
 }
 
-fn fetch_prices(portfolio: &Portfolio) -> Result<HashMap<AssetTag, f64>, Box<dyn Error>> {
-	let portfolio_assets = portfolio.funded_symbols().into_iter().collect::<Vec<_>>();
-	let (equities, pots) = equities_and_pots(portfolio_assets);
-	let equity_prices = fetch_equity_prices(equities)?;
-	let subpot_prices = fetch_pot_prices(pots)?;
+fn fetch_prices(pot: &impl Pot) -> Result<HashMap<AssetTag, f64>, Box<dyn Error>> {
 	let mut prices = HashMap::new();
 	prices.insert(AssetTag::Usd, 1.0);
-	prices.extend(equity_prices);
-	prices.extend(subpot_prices);
-	Ok(prices)
-}
-
-fn fetch_pot_prices(pots: Vec<AssetTag>) -> Result<HashMap<AssetTag, f64>, Box<dyn Error>> {
-	let prices = pots
-		.into_iter()
-		.map(|pot| (pot, 42.0))
-		.collect::<HashMap<AssetTag, _>>();
+	{
+		let equity_assets = pot.read_deep_lot_assets()?.into_iter().map(|it| it).collect();
+		let equity_prices = fetch_equity_prices(equity_assets)?;
+		prices.extend(equity_prices);
+	};
+	{
+		let mut subpots = pot.read_deep_subpots()?;
+		subpots.reverse();
+		for (asset, subpot) in subpots {
+			let value = subpot.read_market_value(&prices)?;
+			prices.insert(asset, value);
+		}
+	}
 	Ok(prices)
 }
 

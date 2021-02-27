@@ -1,4 +1,4 @@
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 use std::error::Error;
 use std::fs::File;
 use std::io::{Read, Write};
@@ -8,11 +8,12 @@ use crate::asset_tag::AssetTag;
 use crate::core::Ramp;
 use crate::disk;
 use crate::lot::Lot;
+use crate::portfolio::Portfolio;
 
-pub trait Pot {
+pub trait Pot: Clone {
 	fn is_not_initialized(&self) -> bool;
 	fn init(&self) -> Result<(), Box<dyn Error>>;
-	fn subpot(&self, name: &str) -> Self;
+	fn subpot(&self, name: &str) -> Box<Self>;
 
 	fn read_cash(&self) -> Result<f64, Box<dyn Error>>;
 	fn write_cash(&self, value: f64) -> Result<(), Box<dyn Error>>;
@@ -31,6 +32,41 @@ pub trait Pot {
 
 	fn read_lot_assets(&self) -> Result<HashSet<AssetTag>, Box<dyn Error>>;
 	fn read_deep_lot_assets(&self) -> Result<HashSet<AssetTag>, Box<dyn Error>>;
+
+	fn read_deep_subpots(&self) -> Result<Vec<(AssetTag, Box<Self>)>, Box<dyn Error>> {
+		let local_subpots = self.read_lot_assets()?
+			.into_iter()
+			.filter(AssetTag::is_subpot)
+			.map(|asset| {
+				let pot = self.subpot(asset.as_folder_name());
+				(asset, pot)
+			})
+			.collect::<Vec<_>>();
+		let mut subpots = Vec::new();
+		subpots.extend(local_subpots.clone());
+		for (_, pot) in local_subpots {
+			let deep_subpots = pot.read_deep_subpots()?;
+			subpots.extend(deep_subpots);
+		}
+		Ok(subpots)
+	}
+
+	fn read_market_value(&self, prices: &HashMap<AssetTag, f64>) -> Result<f64, Box<dyn Error>> {
+		let portfolio = Portfolio {
+			lots: self.read_lots()?,
+			free_cash: self.read_cash()?,
+		};
+		let value = portfolio.market_value(prices);
+		Ok(value)
+	}
+	fn read_market_values(&self, prices: &HashMap<AssetTag, f64>) -> Result<HashMap<AssetTag, f64>, Box<dyn Error>> {
+		let portfolio = Portfolio {
+			lots: self.read_lots()?,
+			free_cash: self.read_cash()?,
+		};
+		let value = portfolio.market_values(prices);
+		Ok(value)
+	}
 }
 
 impl Pot for FolderPot {
@@ -42,9 +78,9 @@ impl Pot for FolderPot {
 		Ok(())
 	}
 
-	fn subpot(&self, name: &str) -> Self {
+	fn subpot(&self, name: &str) -> Box<Self> {
 		let sub_path = self.path.join(name);
-		FolderPot { path: sub_path }
+		Box::new(FolderPot { path: sub_path })
 	}
 
 	fn read_cash(&self) -> Result<f64, Box<dyn Error>> {
@@ -159,6 +195,7 @@ impl Pot for FolderPot {
 	}
 }
 
+#[derive(Clone, Debug)]
 pub struct FolderPot { path: PathBuf }
 
 impl FolderPot {
