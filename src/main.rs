@@ -24,14 +24,7 @@ mod ladder;
 mod lot;
 mod portfolio;
 mod pot;
-
-mod print {
-	pub fn title(s: &str) {
-		println!("{}", s);
-		let width = s.chars().as_str().len();
-		println!("{:=<1$}", "", width);
-	}
-}
+mod print;
 
 fn main() -> Result<(), Box<dyn Error>> {
 	let yaml = clap::load_yaml!("cli.yaml");
@@ -40,8 +33,9 @@ fn main() -> Result<(), Box<dyn Error>> {
 		cli::init()?;
 	} else if let Some(_) = matches.subcommand_matches("status") {
 		cli::status()?;
-	} else if let Some(_) = matches.subcommand_matches("value") {
-		cli::value()?;
+	} else if let Some(matches) = matches.subcommand_matches("value") {
+		let verbose = matches.is_present("verbose");
+		cli::value(verbose)?;
 	} else if let Some(_) = matches.subcommand_matches("lots") {
 		cli::lots()?;
 	} else if let Some(matches) = matches.subcommand_matches("assets") {

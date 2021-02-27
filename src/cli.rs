@@ -122,11 +122,23 @@ fn println_uid(uid: u64) {
 	println!("{:016}", uid);
 }
 
-pub fn value() -> Result<(), Box<dyn Error>> {
+pub fn value(verbose: bool) -> Result<(), Box<dyn Error>> {
 	let portfolio = disk::read_portfolio()?;
 	let prices = fetch_prices(&portfolio)?;
-	let value = portfolio.market_value(&prices);
-	println!("{}", shorten_dollars(value));
+	let market_values = portfolio.market_values(&prices);
+	let value = market_values.iter().map(|(_, value)| *value).sum();
+	if verbose {
+		let mut pairs = market_values.into_iter().collect::<Vec<_>>();
+		pairs.sort_by_key(|x| x.0.to_owned());
+		print::title("Market Values");
+		for (asset, value) in pairs {
+			println!("{:8}  {:>8}", asset.as_str(), shorten_dollars(value));
+		}
+		println!("{:=<18}", "");
+		println!("Total: {}", shorten_dollars(value));
+	} else {
+		println!("{}", shorten_dollars(value));
+	}
 	Ok(())
 }
 

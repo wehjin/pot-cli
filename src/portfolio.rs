@@ -48,8 +48,4 @@ impl Portfolio {
 		map.insert(AssetTag::Usd, self.free_cash);
 		map
 	}
-	pub fn market_value(&self, prices: &HashMap<AssetTag, f64>) -> f64 {
-		let market_values = self.market_values(&prices);
-		market_values.iter().map(|(_, value)| *value).sum()
-	}
 }
