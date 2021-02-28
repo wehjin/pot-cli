@@ -49,8 +49,7 @@ pub fn ramp() -> Result<(), Box<dyn Error>> {
 pub fn targets() -> Result<(), Box<dyn Error>> {
 	let pot = FolderPot::new();
 	let targets = pot.read_targets()?;
-	print::title("TARGETS");
-	targets.iter().for_each(|tag| {
+	targets.iter().rev().for_each(|tag| {
 		println!("{}", tag.as_str());
 	});
 	Ok(())
