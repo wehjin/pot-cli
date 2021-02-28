@@ -24,6 +24,7 @@ mod lot;
 mod portfolio;
 mod pot;
 mod print;
+mod table;
 
 fn main() -> Result<(), Box<dyn Error>> {
 	let yaml = clap::load_yaml!("cli.yaml");

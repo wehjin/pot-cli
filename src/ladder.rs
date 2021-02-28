@@ -10,6 +10,16 @@ pub struct Ladder {
 }
 
 impl Ladder {
+	pub fn asset_portions(&self) -> Vec<(AssetTag, f64)> {
+		let portions = self.target_portions();
+		self.targets.iter().map(|asset| {
+			let portion = match portions.get(asset) {
+				Some(portion) => portion.to_owned(),
+				None => 0.0,
+			};
+			(asset.to_owned(), portion)
+		}).collect::<Vec<_>>()
+	}
 	pub fn target_symbols_ascending(&self) -> Vec<AssetTag> {
 		self.targets.clone()
 	}

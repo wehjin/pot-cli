@@ -3,10 +3,14 @@ use std::error::Error;
 
 use smarket::yf::PricingResult;
 
-use crate::{Custodian, disk, Lot, print, ShareCount};
+use table::plain::PlainColumn;
+
+use crate::{Custodian, disk, Lot, print, ShareCount, table};
 use crate::asset_tag::AssetTag;
 use crate::core::Ramp;
 use crate::pot::{FolderPot, Pot};
+use crate::table::percent::PercentColumn;
+use crate::table::Table;
 
 pub fn init() -> Result<(), Box<dyn Error>> {
 	let pot = FolderPot::new();
@@ -48,10 +52,21 @@ pub fn ramp() -> Result<(), Box<dyn Error>> {
 
 pub fn targets() -> Result<(), Box<dyn Error>> {
 	let pot = FolderPot::new();
-	let targets = pot.read_targets()?;
-	targets.iter().rev().for_each(|tag| {
-		println!("{}", tag.as_str());
-	});
+	let ladder = pot.read_ladder()?;
+	let (symbols, portions) = {
+		let mut asset_portions = ladder.asset_portions();
+		asset_portions.reverse();
+		let symbols = asset_portions.iter().map(|(asset, _)| asset.to_string()).collect();
+		let portions = asset_portions.iter().map(|(_, portion)| portion.to_owned()).collect();
+		(symbols, portions)
+	};
+	let table = Table::new(vec![
+		Box::new(PlainColumn::from(&symbols)),
+		Box::new(PercentColumn::new(&portions))
+	]);
+	for i in 0..table.lines() {
+		println!("{}", table.printout(i));
+	}
 	Ok(())
 }
 

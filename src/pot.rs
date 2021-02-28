@@ -7,6 +7,7 @@ use std::path::{Path, PathBuf};
 use crate::asset_tag::AssetTag;
 use crate::core::Ramp;
 use crate::disk;
+use crate::ladder::Ladder;
 use crate::lot::Lot;
 use crate::portfolio::Portfolio;
 
@@ -29,6 +30,8 @@ pub trait Pot: Clone {
 
 	fn read_targets(&self) -> Result<Vec<AssetTag>, Box<dyn Error>>;
 	fn write_targets(&self, targets: &Vec<AssetTag>) -> Result<(), Box<dyn Error>>;
+
+	fn read_ladder(&self) -> Result<Ladder, Box<dyn Error>>;
 
 	fn read_lot_assets(&self) -> Result<HashSet<AssetTag>, Box<dyn Error>>;
 	fn read_deep_lot_assets(&self) -> Result<HashSet<AssetTag>, Box<dyn Error>>;
@@ -132,7 +135,6 @@ impl Pot for FolderPot {
 		};
 		Ok(count)
 	}
-
 	fn write_shares(&self, custodian: &str, symbol: &str, count: f64) -> Result<u64, Box<dyn Error>> {
 		let tag = AssetTag::from(symbol);
 		let mut lot_id: Option<u64> = None;
@@ -147,6 +149,7 @@ impl Pot for FolderPot {
 		self.write_lots(&new_lots)?;
 		Ok(lot_id.expect("lot it"))
 	}
+
 	fn read_targets(&self) -> Result<Vec<AssetTag>, Box<dyn Error>> {
 		let mut file_s = String::new();
 		let file_open = File::open(self.team_file());
@@ -163,13 +166,17 @@ impl Pot for FolderPot {
 			Ok(asset_tags)
 		}
 	}
-
 	fn write_targets(&self, targets: &Vec<AssetTag>) -> Result<(), Box<dyn Error>> {
 		let symbols = targets.iter().map(|tag| tag.as_str().to_string()).collect::<Vec<String>>();
 		let targets: String = symbols.join("\n");
 		let mut file = File::create(self.team_file())?;
 		file.write_all(targets.as_bytes())?;
 		Ok(())
+	}
+
+	fn read_ladder(&self) -> Result<Ladder, Box<dyn Error>> {
+		let ladder = Ladder { targets: self.read_targets()?, ramp: self.read_ramp()? };
+		Ok(ladder)
 	}
 
 	fn read_lot_assets(&self) -> Result<HashSet<AssetTag>, Box<dyn Error>> {
