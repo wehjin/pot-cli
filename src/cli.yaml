@@ -59,6 +59,18 @@ subcommands:
               - SYMBOLS:
                   help: Sets the comma-separated list of targets to add
                   required: true
+  - promote:
+      about: Promotes a target to the next level
+      args:
+        - SYMBOL:
+            help: Sets the symbol of the target to promote
+            required: true
+  - demote:
+      about: Demotes a target to a lower level
+      args:
+        - SYMBOL:
+            help: Sets the symbol of the target to demote
+            required: true
   - set:
       about: Sets a pot configuration property
       subcommands:

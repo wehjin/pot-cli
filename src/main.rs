@@ -50,13 +50,19 @@ fn main() -> Result<(), Box<dyn Error>> {
 		} else {
 			cli::ramp()?;
 		}
-	} else if let Some(targets_matches) = matches.subcommand_matches("targets") {
-		if let Some(add_matches) = targets_matches.subcommand_matches("add") {
-			let symbols = add_matches.value_of("SYMBOLS").expect("symbols");
+	} else if let Some(matches) = matches.subcommand_matches("targets") {
+		if let Some(matches) = matches.subcommand_matches("add") {
+			let symbols = matches.value_of("SYMBOLS").expect("symbols");
 			cli::add_targets(symbols)?;
 		} else {
 			cli::targets()?;
 		}
+	} else if let Some(matches) = matches.subcommand_matches("promote") {
+		let symbol = matches.value_of("SYMBOL").expect("symbol");
+		cli::promote_target(symbol)?;
+	} else if let Some(matches) = matches.subcommand_matches("demote") {
+		let symbol = matches.value_of("SYMBOL").expect("symbol");
+		cli::demote_target(symbol)?;
 	} else if let Some(matches) = matches.subcommand_matches("shares") {
 		// TODO Make this a subcommand of lots.
 		let custodian = matches.value_of("CUSTODIAN").expect("custodian");

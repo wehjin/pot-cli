@@ -92,6 +92,38 @@ pub fn add_targets(symbols: &str) -> Result<(), Box<dyn Error>> {
 	Ok(())
 }
 
+pub fn promote_target(symbol: &str) -> Result<(), Box<dyn Error>> {
+	let asset = AssetTag::from(symbol);
+	let pot = FolderPot::new();
+	let mut ladder = pot.read_ladder()?;
+	match ladder.promote_target(&asset) {
+		None => {
+			println!("{} is not a pot target", asset.as_str());
+		}
+		Some(position) => {
+			pot.write_targets(&ladder.targets)?;
+			println!("Promoted {} to position {}", asset.as_str(), position);
+		}
+	};
+	Ok(())
+}
+
+pub fn demote_target(symbol: &str) -> Result<(), Box<dyn Error>> {
+	let asset = AssetTag::from(symbol);
+	let pot = FolderPot::new();
+	let mut ladder = pot.read_ladder()?;
+	match ladder.demote_target(&asset) {
+		None => {
+			println!("{} is not a pot target", asset.as_str());
+		}
+		Some(position) => {
+			pot.write_targets(&ladder.targets)?;
+			println!("Demoted {} to position {}", asset.as_str(), position);
+		}
+	};
+	Ok(())
+}
+
 pub fn shares(custodian: &str, symbol: &str, count: Option<f64>) -> Result<(), Box<dyn Error>> {
 	let pot = FolderPot::new();
 	match count {

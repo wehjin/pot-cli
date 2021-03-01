@@ -45,7 +45,7 @@ impl ToString for AssetTag {
 
 impl<T: AsRef<str>> From<T> for AssetTag {
 	fn from(t: T) -> Self {
-		let s = t.as_ref();
+		let s = t.as_ref().trim();
 		if s.starts_with(":") {
 			AssetTag::Pot(format!(":{}", s[1..].to_lowercase()))
 		} else {

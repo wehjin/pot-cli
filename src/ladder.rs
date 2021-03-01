@@ -46,4 +46,28 @@ impl Ladder {
 			.map(|(asset_tag, weight)| (asset_tag.clone(), *weight / full_weight))
 			.collect::<HashMap<AssetTag, _>>()
 	}
+	pub fn promote_target(&mut self, asset: &AssetTag) -> Option<usize> {
+		let position = self.targets.iter().position(|it| it == asset);
+		match position {
+			Some(position) => {
+				self.targets.remove(position);
+				let new_position = (position + 1).min(self.targets.len());
+				self.targets.insert(new_position, asset.to_owned());
+				Some(new_position)
+			}
+			None => None
+		}
+	}
+	pub fn demote_target(&mut self, asset: &AssetTag) -> Option<usize> {
+		let position = self.targets.iter().position(|it| it == asset);
+		match position {
+			Some(position) => {
+				self.targets.remove(position);
+				let new_position = position.max(1) - 1;
+				self.targets.insert(new_position, asset.to_owned());
+				Some(new_position)
+			}
+			None => None
+		}
+	}
 }
