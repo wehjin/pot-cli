@@ -97,6 +97,14 @@ fn main() -> Result<(), Box<dyn Error>> {
 		} else {
 			println!("Add what?");
 		}
+	} else if let Some(matches) = matches.subcommand_matches("move") {
+		let symbol = matches.value_of("SYMBOL").expect("symbol");
+		if let Some(matches) = matches.subcommand_matches("into") {
+			let subpot = matches.value_of("SUBPOT").expect("subpot");
+			cli::move_lot(symbol, subpot)?;
+		} else {
+			println!("Move {} into which subpot?", symbol);
+		}
 	} else {
 		cli::status()?;
 	}

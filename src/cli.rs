@@ -179,8 +179,25 @@ pub fn add_lot(custody: &str, asset_tag: &AssetTag, share_count: f64, uid: Optio
 		};
 		lots.extend(vec![lot]);
 		pot.write_lots(&lots)?;
-		println_uid(uid);
+		print::lots(&lots);
 	}
+	Ok(())
+}
+
+pub fn move_lot(symbol: &str, subpot_name: &str) -> Result<(), Box<dyn Error>> {
+	let moving = AssetTag::from(symbol);
+	let pot = FolderPot::new();
+	let lots = pot.read_lots()?;
+	let (move_lots, hold_lots): (Vec<Lot>, Vec<Lot>) = lots.into_iter().partition(|lot| lot.has_tag(&moving));
+	let move_lots = move_lots.iter().map(Lot::with_fresh_uid).collect::<Vec<_>>();
+	let subpot = pot.subpot(subpot_name);
+	{
+		let mut subpot_lots = subpot.read_lots()?;
+		subpot_lots.extend(move_lots);
+		subpot.write_lots(&subpot_lots)?;
+	}
+	pot.write_lots(&hold_lots)?;
+	print::lots(&hold_lots);
 	Ok(())
 }
 

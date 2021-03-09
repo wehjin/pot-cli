@@ -32,4 +32,7 @@ impl Lot {
 	pub fn with_share_count(&self, count: f64) -> Self {
 		Lot { share_count: ShareCount(count), ..self.clone() }
 	}
+	pub fn with_fresh_uid(&self) -> Self {
+		Lot { uid: Self::random_uid(), ..self.clone() }
+	}
 }

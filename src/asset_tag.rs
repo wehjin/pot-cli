@@ -12,6 +12,11 @@ pub enum AssetTag {
 }
 
 impl AssetTag {
+	pub fn pot_from_name(name: &str) -> Self {
+		let name = name.trim().to_lowercase();
+		let name = if name.starts_with(":") { name } else { format!(":{}", name) };
+		AssetTag::Pot(name)
+	}
 	pub fn is_subpot(&self) -> bool {
 		match self {
 			AssetTag::Pot(_) => true,
@@ -47,7 +52,7 @@ impl<T: AsRef<str>> From<T> for AssetTag {
 	fn from(t: T) -> Self {
 		let s = t.as_ref().trim();
 		if s.starts_with(":") {
-			AssetTag::Pot(format!(":{}", s[1..].to_lowercase()))
+			AssetTag::pot_from_name(&s[1..])
 		} else {
 			let symbol = s.to_uppercase();
 			if symbol == "USD" {
