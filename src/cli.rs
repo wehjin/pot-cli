@@ -159,6 +159,23 @@ pub fn shares(custodian: &str, symbol: &str, count: Option<f64>) -> Result<(), B
 	Ok(())
 }
 
+pub fn add_subpot(name: &str) -> Result<(), Box<dyn Error>> {
+	let pot = FolderPot::new();
+	let sub = pot.subpot(name);
+	sub.init_if_not()?;
+	{
+		let lots = pot.read_lots()?;
+		let tag = AssetTag::pot_from_name(name);
+		let position = lots.iter().position(|lot| lot.asset_tag == tag);
+		if position.is_none() {
+			add_lot(tag.as_str(), &tag, 1.0, None)?;
+		}
+	}
+	let lots = pot.read_lots()?;
+	print::lots(&lots);
+	Ok(())
+}
+
 pub fn add_lot(custody: &str, asset_tag: &AssetTag, share_count: f64, uid: Option<u64>) -> Result<(), Box<dyn Error>> {
 	let pot = FolderPot::new();
 	let uid = uid.unwrap_or_else(Lot::random_uid);

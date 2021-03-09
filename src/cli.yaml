@@ -83,6 +83,12 @@ subcommands:
   - add:
       about: Adds an item to the pot
       subcommands:
+        - subpot:
+            about: Adds a sub-pot to the pot
+            args:
+              - NAME:
+                  help: Sets the sub-pot name
+                  required: true
         - target:
             about: Adds a target to the pot
             args:

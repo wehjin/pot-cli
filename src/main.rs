@@ -87,6 +87,9 @@ fn main() -> Result<(), Box<dyn Error>> {
 		} else if let Some(matches) = matches.subcommand_matches("target") {
 			let symbol = matches.value_of("SYMBOL").expect("symbol");
 			cli::add_targets(symbol)?;
+		} else if let Some(matches) = matches.subcommand_matches("subpot") {
+			let name = matches.value_of("NAME").expect("name");
+			cli::add_subpot(name)?;
 		} else {
 			println!("Add what?");
 		}

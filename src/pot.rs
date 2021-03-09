@@ -13,6 +13,7 @@ use crate::portfolio::Portfolio;
 
 pub trait Pot: Clone {
 	fn is_not_initialized(&self) -> bool;
+	fn init_if_not(&self) -> Result<(), Box<dyn Error>>;
 	fn init(&self) -> Result<(), Box<dyn Error>>;
 	fn subpot(&self, name: &str) -> Box<Self>;
 
@@ -74,6 +75,14 @@ pub trait Pot: Clone {
 
 impl Pot for FolderPot {
 	fn is_not_initialized(&self) -> bool { csv::Reader::from_path(self.lots_file()).is_err() }
+	fn init_if_not(&self) -> Result<(), Box<dyn Error>> {
+		std::fs::create_dir_all(self.path.as_path())?;
+		if self.is_not_initialized() {
+			self.init()
+		} else {
+			Ok(())
+		}
+	}
 	fn init(&self) -> Result<(), Box<dyn Error>> {
 		self.write_lots(&Vec::new())?;
 		self.write_cash(0.0)?;
