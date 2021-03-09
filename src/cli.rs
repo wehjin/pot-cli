@@ -163,16 +163,14 @@ pub fn add_subpot(name: &str) -> Result<(), Box<dyn Error>> {
 	let pot = FolderPot::new();
 	let sub = pot.subpot(name);
 	sub.init_if_not()?;
-	{
-		let lots = pot.read_lots()?;
-		let tag = AssetTag::pot_from_name(name);
-		let position = lots.iter().position(|lot| lot.asset_tag == tag);
-		if position.is_none() {
-			add_lot(tag.as_str(), &tag, 1.0, None)?;
-		}
-	}
 	let lots = pot.read_lots()?;
-	print::lots(&lots);
+	let tag = AssetTag::pot_from_name(name);
+	let position = lots.iter().position(|lot| lot.asset_tag == tag);
+	if position.is_none() {
+		add_lot(tag.as_str(), &tag, 1.0, None)?;
+	} else {
+		print::lots(&lots);
+	}
 	Ok(())
 }
 
