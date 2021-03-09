@@ -90,6 +90,13 @@ fn main() -> Result<(), Box<dyn Error>> {
 		} else {
 			println!("Add what?");
 		}
+	} else if let Some(matches) = matches.subcommand_matches("remove") {
+		if let Some(matches) = matches.subcommand_matches("target") {
+			let symbol = matches.value_of("SYMBOL").expect("symbol");
+			cli::remove_targets(symbol)?;
+		} else {
+			println!("Add what?");
+		}
 	} else {
 		cli::status()?;
 	}

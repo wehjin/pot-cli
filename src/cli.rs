@@ -71,24 +71,44 @@ pub fn targets() -> Result<(), Box<dyn Error>> {
 }
 
 pub fn add_targets(symbols: &str) -> Result<(), Box<dyn Error>> {
-	let pot = FolderPot::new();
 	let asset_tags = symbols
 		.split(",")
 		.map(|s| AssetTag::from(s.trim()))
 		.collect::<Vec<_>>();
+	let pot = FolderPot::new();
 	let mut targets = pot.read_targets()?;
-	let mut added = Vec::new();
+	let original = targets.len();
 	asset_tags.iter().rev().for_each(|tag| {
 		let position = targets.iter().position(|t| t == tag);
 		if position.is_none() {
 			targets.insert(0, tag.clone());
-			added.insert(0, tag.as_str().to_string());
 		}
 	});
-	if !added.is_empty() {
+	if targets.len() > original {
 		pot.write_targets(&targets)?;
 	}
-	println!("{}", added.join(","));
+	print::targets(&targets);
+	Ok(())
+}
+
+pub fn remove_targets(symbols: &str) -> Result<(), Box<dyn Error>> {
+	let asset_tags = symbols
+		.split(",")
+		.map(|s| AssetTag::from(s.trim()))
+		.collect::<Vec<_>>();
+	let pot = FolderPot::new();
+	let mut targets = pot.read_targets()?;
+	let original = targets.len();
+	asset_tags.iter().for_each(|tag| {
+		let position = targets.iter().position(|t| t == tag);
+		if let Some(index) = position {
+			targets.remove(index);
+		}
+	});
+	if targets.len() < original {
+		pot.write_targets(&targets)?;
+	}
+	print::targets(&targets);
 	Ok(())
 }
 

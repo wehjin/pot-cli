@@ -108,4 +108,13 @@ subcommands:
                   help: Sets the lot's identifier
                   required: false
                   index: 4
+  - remove:
+      about: Removes an item from the pot
+      subcommands:
+        - target:
+            about: Indicates that the item to be removed is a target
+            args:
+              - SYMBOL:
+                  help: Sets the target symbol
+                  required: true
 
