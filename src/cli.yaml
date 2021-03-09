@@ -108,7 +108,7 @@ subcommands:
                   help: Sets the lot's identifier
                   required: false
                   index: 4
-  - remove:
+  - rm:
       about: Removes an item from the pot
       subcommands:
         - target:
