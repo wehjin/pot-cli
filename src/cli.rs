@@ -7,7 +7,7 @@ use table::plain::PlainColumn;
 
 use crate::{Custodian, disk, Lot, print, ShareCount, table};
 use crate::asset_tag::AssetTag;
-use crate::core::Ramp;
+use crate::core::{DeepAsset, Ramp};
 use crate::pot::{FolderPot, Pot};
 use crate::table::percent::PercentColumn;
 use crate::table::Table;
@@ -311,17 +311,14 @@ pub fn lots() -> Result<(), Box<dyn Error>> {
 	Ok(())
 }
 
-pub fn assets(go_deep: bool) -> Result<(), Box<dyn Error>> {
+pub fn assets() -> Result<(), Box<dyn Error>> {
 	let pot = FolderPot::new();
-	let unique_assets = if go_deep {
-		pot.read_deep_lot_assets()?
-	} else {
-		pot.read_lot_assets()?
-	};
-	let mut symbols = unique_assets.iter().map(AssetTag::to_string).collect::<Vec<_>>();
-	symbols.sort();
-	let line: String = symbols.join(",");
-	println!("{}", line);
+	let deep_assets = pot.read_deep_assets()?;
+	let mut titles = deep_assets.iter().map(DeepAsset::title).collect::<Vec<_>>();
+	titles.sort();
+	titles.iter().for_each(|title| {
+		println!("{}", title);
+	});
 	Ok(())
 }
 

@@ -5,7 +5,7 @@ use std::io::{Read, Write};
 use std::path::{Path, PathBuf};
 
 use crate::asset_tag::AssetTag;
-use crate::core::Ramp;
+use crate::core::{DeepAsset, PotPath, Ramp};
 use crate::disk;
 use crate::ladder::Ladder;
 use crate::lot::Lot;
@@ -92,7 +92,10 @@ impl Pot for FolderPot {
 
 	fn subpot(&self, name: &str) -> Box<Self> {
 		let sub_path = self.path.join(name);
-		Box::new(FolderPot { path: sub_path })
+		Box::new(FolderPot {
+			path: sub_path,
+			pot_path: self.pot_path.extend(name),
+		})
 	}
 
 	fn read_cash(&self) -> Result<f64, Box<dyn Error>> {
@@ -213,11 +216,33 @@ impl Pot for FolderPot {
 }
 
 #[derive(Clone, Debug)]
-pub struct FolderPot { path: PathBuf }
+pub struct FolderPot {
+	path: PathBuf,
+	pot_path: PotPath,
+}
 
 impl FolderPot {
-	pub fn new() -> Self { FolderPot { path: PathBuf::from(".") } }
+	pub fn new() -> Self {
+		FolderPot {
+			path: PathBuf::from("."),
+			pot_path: PotPath::CurrentFolder,
+		}
+	}
 	pub fn path(&self) -> &Path { &self.path }
+	pub fn read_deep_assets(&self) -> Result<HashSet<DeepAsset>, Box<dyn Error>> {
+		let local_assets = self.read_lot_assets()?;
+		let (sub_tags, leaf_tags): (Vec<AssetTag>, Vec<AssetTag>) = local_assets.into_iter().partition(AssetTag::is_subpot);
+		let mut deep_assets = leaf_tags.iter()
+			.map(|it| DeepAsset::new(&self.pot_path, it))
+			.collect::<HashSet<_>>();
+		for tag in sub_tags {
+			let subpot = self.subpot(tag.as_folder_name());
+			let subpot_assets = subpot.read_deep_assets()?;
+			deep_assets.extend(subpot_assets);
+		}
+		Ok(deep_assets)
+	}
+
 	fn file_path(&self, filename: &str) -> PathBuf { self.path.join(filename) }
 	fn cash_file(&self) -> PathBuf { self.file_path("cash.txt") }
 	fn ramp_file(&self) -> PathBuf { self.file_path("ramp.txt") }

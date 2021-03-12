@@ -12,11 +12,15 @@ pub enum AssetTag {
 }
 
 impl AssetTag {
+	pub fn equity(symbol: &str) -> Self {
+		AssetTag::Equity(symbol.to_uppercase())
+	}
 	pub fn pot_from_name(name: &str) -> Self {
 		let name = name.trim().to_lowercase();
 		let name = if name.starts_with(":") { name } else { format!(":{}", name) };
 		AssetTag::Pot(name)
 	}
+
 	pub fn is_subpot(&self) -> bool {
 		match self {
 			AssetTag::Pot(_) => true,

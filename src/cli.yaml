@@ -17,12 +17,6 @@ subcommands:
       about: Lists lots
   - assets:
       about: Lists assets held in the pot
-      args:
-        - deep:
-            help: Expands the list to include sub-pot symbols
-            long: deep
-            required: false
-            takes_value: false
   - cash:
       about: Prints the free cash value
   - ramp:

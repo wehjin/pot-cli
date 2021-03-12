@@ -1,3 +1,9 @@
+pub use deep_asset::*;
+pub use pot_path::*;
+
+mod pot_path;
+mod deep_asset;
+
 #[derive(Copy, Clone, Eq, PartialEq, Debug)]
 pub enum Ramp { Golden, Flat }
 
