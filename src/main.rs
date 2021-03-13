@@ -100,10 +100,10 @@ fn main() -> Result<(), Box<dyn Error>> {
 		} else {
 			println!("Add what?");
 		}
-	} else if let Some(matches) = matches.subcommand_matches("move") {
+	} else if let Some(matches) = matches.subcommand_matches("gather") {
 		let symbol = matches.value_of("SYMBOL").expect("symbol");
 		let pot_path = matches.value_of("POT").map_or(PotPath::CurrentFolder, PotPath::from_str);
-		cli::move_asset(symbol, &pot_path)?;
+		cli::gather_asset(symbol, &pot_path)?;
 	} else {
 		cli::status()?;
 	}

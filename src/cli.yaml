@@ -117,8 +117,8 @@ subcommands:
               - SYMBOL:
                   help: Sets the target symbol
                   required: true
-  - move:
-      about: Moves an asset into a pot
+  - gather:
+      about: Gathers an asset into a pot
       args:
         - SYMBOL:
             help: Sets the asset symbol
@@ -127,3 +127,4 @@ subcommands:
             help: Sets the destination pot
             long: into
             takes_value: true
+            required: true

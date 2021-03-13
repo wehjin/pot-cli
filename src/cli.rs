@@ -200,7 +200,7 @@ pub fn add_lot(custody: &str, asset_tag: &AssetTag, share_count: f64, uid: Optio
 	Ok(())
 }
 
-pub fn move_asset(symbol: &str, dest: &PotPath) -> Result<(), Box<dyn Error>> {
+pub fn gather_asset(symbol: &str, dest: &PotPath) -> Result<(), Box<dyn Error>> {
 	let mut dest_pot = FolderPot::from_pot_path(dest);
 	let moving_tag = AssetTag::from(symbol);
 	let moving_assets = FolderPot::new().read_deep_assets()?
