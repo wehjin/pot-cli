@@ -7,13 +7,13 @@ use table::plain::PlainColumn;
 
 use crate::{Custodian, disk, Lot, print, ShareCount, table};
 use crate::asset_tag::AssetTag;
-use crate::core::{DeepAsset, Ramp};
+use crate::core::{DeepAsset, PotPath, Ramp};
 use crate::pot::{FolderPot, Pot};
 use crate::table::percent::PercentColumn;
 use crate::table::Table;
 
 pub fn init() -> Result<(), Box<dyn Error>> {
-	let pot = FolderPot::new();
+	let mut pot = FolderPot::new();
 	if pot.is_not_initialized() {
 		pot.init()?;
 		println!("Initialized pot in {}", pot.path().display());
@@ -145,13 +145,14 @@ pub fn demote_target(symbol: &str) -> Result<(), Box<dyn Error>> {
 }
 
 pub fn shares(custodian: &str, symbol: &str, count: Option<f64>) -> Result<(), Box<dyn Error>> {
-	let pot = FolderPot::new();
 	match count {
 		None => {
+			let pot = FolderPot::new();
 			let count = pot.read_shares(&custodian, &symbol)?;
 			println!("{}", count);
 		}
 		Some(count) => {
+			let mut pot = FolderPot::new();
 			let uid = pot.write_shares(&custodian, &symbol, count)?;
 			println_uid(uid);
 		}
@@ -161,7 +162,7 @@ pub fn shares(custodian: &str, symbol: &str, count: Option<f64>) -> Result<(), B
 
 pub fn add_subpot(name: &str) -> Result<(), Box<dyn Error>> {
 	let pot = FolderPot::new();
-	let sub = pot.subpot(name);
+	let mut sub = pot.subpot(name);
 	sub.init_if_not()?;
 	let lots = pot.read_lots()?;
 	let tag = AssetTag::pot_from_name(name);
@@ -175,7 +176,7 @@ pub fn add_subpot(name: &str) -> Result<(), Box<dyn Error>> {
 }
 
 pub fn add_lot(custody: &str, asset_tag: &AssetTag, share_count: f64, uid: Option<u64>) -> Result<(), Box<dyn Error>> {
-	let pot = FolderPot::new();
+	let mut pot = FolderPot::new();
 	let uid = uid.unwrap_or_else(Lot::random_uid);
 	let mut lots = pot.read_lots()?;
 	let existing = lots.iter().find(|it| it.uid == uid);
@@ -199,22 +200,26 @@ pub fn add_lot(custody: &str, asset_tag: &AssetTag, share_count: f64, uid: Optio
 	Ok(())
 }
 
-pub fn move_lot(symbol: &str, subpot_name: &str) -> Result<(), Box<dyn Error>> {
-	let moving = AssetTag::from(symbol);
-	let pot = FolderPot::new();
-	let lots = pot.read_lots()?;
-	let (move_lots, hold_lots): (Vec<Lot>, Vec<Lot>) = lots.into_iter().partition(|lot| lot.has_tag(&moving));
-	let move_lots = move_lots.iter().map(Lot::with_fresh_uid).collect::<Vec<_>>();
-	let subpot = pot.subpot(subpot_name);
-	{
-		let mut subpot_lots = subpot.read_lots()?;
-		subpot_lots.extend(move_lots);
-		subpot.write_lots(&subpot_lots)?;
+pub fn move_asset(symbol: &str, dest: &PotPath) -> Result<(), Box<dyn Error>> {
+	let mut dest_pot = FolderPot::from_pot_path(dest);
+	let moving_tag = AssetTag::from(symbol);
+	let moving_assets = FolderPot::new().read_deep_assets()?
+		.into_iter()
+		.filter(|asset| !asset.has_path(dest) && asset.has_tag(&moving_tag))
+		.collect::<Vec<_>>();
+	for ref moving_asset in moving_assets {
+		let mut src_pot = FolderPot::from_pot_path(&moving_asset.pot_path);
+		let src_lots = src_pot.read_lots()?;
+		let (move_lots, hold_lots): (Vec<Lot>, Vec<Lot>) = src_lots
+			.into_iter()
+			.partition(|lot| lot.has_tag(&moving_tag));
+		let fresh_lots = move_lots.iter().map(Lot::with_fresh_uid).collect::<Vec<_>>();
+		dest_pot.add_lots(fresh_lots)?;
+		src_pot.write_lots(&hold_lots)?;
 	}
-	pot.write_lots(&hold_lots)?;
-	print::lots(&hold_lots);
-	Ok(())
+	assets()
 }
+
 
 fn println_uid(uid: u64) {
 	println!("{:016}", uid);

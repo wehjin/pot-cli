@@ -5,6 +5,19 @@ pub enum PotPath {
 }
 
 impl PotPath {
+	pub fn from_str(s: &str) -> Self {
+		let s = s.trim();
+		match s {
+			"" | "." | "::" => PotPath::CurrentFolder,
+			_ => {
+				let segments = s.split("::").collect::<Vec<_>>();
+				segments.into_iter().fold(
+					PotPath::CurrentFolder,
+					|path, next| path.extend(next),
+				)
+			}
+		}
+	}
 	pub fn segment_names(&self) -> Vec<String> {
 		match self {
 			PotPath::CurrentFolder => vec!["".to_string()],

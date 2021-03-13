@@ -13,8 +13,8 @@ use crate::portfolio::Portfolio;
 
 pub trait Pot: Clone {
 	fn is_not_initialized(&self) -> bool;
-	fn init_if_not(&self) -> Result<(), Box<dyn Error>>;
-	fn init(&self) -> Result<(), Box<dyn Error>>;
+	fn init_if_not(&mut self) -> Result<(), Box<dyn Error>>;
+	fn init(&mut self) -> Result<(), Box<dyn Error>>;
 	fn subpot(&self, name: &str) -> Box<Self>;
 
 	fn read_cash(&self) -> Result<f64, Box<dyn Error>>;
@@ -24,10 +24,10 @@ pub trait Pot: Clone {
 	fn write_ramp(&self, ramp: Ramp) -> Result<(), Box<dyn Error>>;
 
 	fn read_lots(&self) -> Result<Vec<Lot>, Box<dyn Error>>;
-	fn write_lots(&self, lots: &Vec<Lot>) -> Result<(), Box<dyn Error>>;
+	fn write_lots(&mut self, lots: &Vec<Lot>) -> Result<(), Box<dyn Error>>;
 
 	fn read_shares(&self, custodian: &str, symbol: &str) -> Result<f64, Box<dyn Error>>;
-	fn write_shares(&self, custodian: &str, symbol: &str, count: f64) -> Result<u64, Box<dyn Error>>;
+	fn write_shares(&mut self, custodian: &str, symbol: &str, count: f64) -> Result<u64, Box<dyn Error>>;
 
 	fn read_targets(&self) -> Result<Vec<AssetTag>, Box<dyn Error>>;
 	fn write_targets(&self, targets: &Vec<AssetTag>) -> Result<(), Box<dyn Error>>;
@@ -71,11 +71,16 @@ pub trait Pot: Clone {
 		let value = portfolio.market_values(prices);
 		Ok(value)
 	}
+	fn add_lots(&mut self, additions: Vec<Lot>) -> Result<(), Box<dyn Error>> {
+		let mut lots = self.read_lots()?;
+		lots.extend(additions);
+		self.write_lots(&lots)
+	}
 }
 
 impl Pot for FolderPot {
 	fn is_not_initialized(&self) -> bool { csv::Reader::from_path(self.lots_file()).is_err() }
-	fn init_if_not(&self) -> Result<(), Box<dyn Error>> {
+	fn init_if_not(&mut self) -> Result<(), Box<dyn Error>> {
 		std::fs::create_dir_all(self.path.as_path())?;
 		if self.is_not_initialized() {
 			self.init()
@@ -83,7 +88,7 @@ impl Pot for FolderPot {
 			Ok(())
 		}
 	}
-	fn init(&self) -> Result<(), Box<dyn Error>> {
+	fn init(&mut self) -> Result<(), Box<dyn Error>> {
 		self.write_lots(&Vec::new())?;
 		self.write_cash(0.0)?;
 		self.write_ramp(Ramp::Golden)?;
@@ -127,7 +132,7 @@ impl Pot for FolderPot {
 		lots.reverse();
 		Ok(lots)
 	}
-	fn write_lots(&self, lots: &Vec<Lot>) -> Result<(), Box<dyn Error>> {
+	fn write_lots(&mut self, lots: &Vec<Lot>) -> Result<(), Box<dyn Error>> {
 		let mut wtr = csv::Writer::from_path(self.lots_file())?;
 		for lot in lots {
 			wtr.serialize(lot)?;
@@ -147,7 +152,7 @@ impl Pot for FolderPot {
 		};
 		Ok(count)
 	}
-	fn write_shares(&self, custodian: &str, symbol: &str, count: f64) -> Result<u64, Box<dyn Error>> {
+	fn write_shares(&mut self, custodian: &str, symbol: &str, count: f64) -> Result<u64, Box<dyn Error>> {
 		let tag = AssetTag::from(symbol);
 		let mut lot_id: Option<u64> = None;
 		let new_lots = self.read_lots()?.into_iter().map(|lot| {
@@ -227,6 +232,16 @@ impl FolderPot {
 			path: PathBuf::from("."),
 			pot_path: PotPath::CurrentFolder,
 		}
+	}
+	pub fn from_pot_path(pot_path: &PotPath) -> Self {
+		let path = pot_path.segment_names()
+			.into_iter()
+			.filter(|it| !it.is_empty())
+			.fold(
+				PathBuf::from("."),
+				|path, next| path.join(next),
+			);
+		FolderPot { path, pot_path: pot_path.to_owned() }
 	}
 	pub fn path(&self) -> &Path { &self.path }
 	pub fn read_deep_assets(&self) -> Result<HashSet<DeepAsset>, Box<dyn Error>> {

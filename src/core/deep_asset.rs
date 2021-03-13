@@ -20,6 +20,8 @@ impl DeepAsset {
 		let names = names.into_iter().filter(|it| !it.is_empty()).collect::<Vec<_>>();
 		names.join("::")
 	}
+	pub fn has_tag(&self, tag: &AssetTag) -> bool { &self.asset_tag == tag }
+	pub fn has_path(&self, path: &PotPath) -> bool { &self.pot_path == path }
 }
 
 #[cfg(test)]

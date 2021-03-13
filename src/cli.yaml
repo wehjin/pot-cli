@@ -118,15 +118,12 @@ subcommands:
                   help: Sets the target symbol
                   required: true
   - move:
-      about: Move an asset to a sub-pot
+      about: Moves an asset into a pot
       args:
         - SYMBOL:
             help: Sets the asset symbol
             required: true
-      subcommands:
-        - into:
-            about: Indicates the following name is the sub-pot name
-            args:
-              - SUBPOT:
-                  help: Sets the sub-pot name
-                  required: true
+        - POT:
+            help: Sets the destination pot
+            long: into
+            takes_value: true

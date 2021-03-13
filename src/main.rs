@@ -14,6 +14,7 @@ use serde::{Deserialize, Serialize};
 use lot::*;
 
 use crate::asset_tag::AssetTag;
+use crate::core::PotPath;
 
 mod asset_tag;
 mod cli;
@@ -101,12 +102,8 @@ fn main() -> Result<(), Box<dyn Error>> {
 		}
 	} else if let Some(matches) = matches.subcommand_matches("move") {
 		let symbol = matches.value_of("SYMBOL").expect("symbol");
-		if let Some(matches) = matches.subcommand_matches("into") {
-			let subpot = matches.value_of("SUBPOT").expect("subpot");
-			cli::move_lot(symbol, subpot)?;
-		} else {
-			println!("Move {} into which subpot?", symbol);
-		}
+		let pot_path = matches.value_of("POT").map_or(PotPath::CurrentFolder, PotPath::from_str);
+		cli::move_asset(symbol, &pot_path)?;
 	} else {
 		cli::status()?;
 	}
