@@ -4,11 +4,16 @@ subcommands:
   - init:
       about: Creates an empty pot
   - value:
-      about: Prints the usd value of the pot
+      about: Prints the USD value of the pot
       args:
         - verbose:
             help: Displays values of each lot
             long: verbose
+            required: false
+            takes_value: false
+        - assets:
+            help: Prints a value for each asset
+            long: assets
             required: false
             takes_value: false
   - status:

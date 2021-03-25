@@ -2,6 +2,7 @@ use std::ops::Deref;
 
 pub mod plain;
 pub mod percent;
+pub mod dollar_value;
 
 pub trait Column {
 	fn rows(&self) -> usize;

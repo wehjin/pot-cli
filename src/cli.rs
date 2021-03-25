@@ -7,8 +7,9 @@ use table::plain::PlainColumn;
 
 use crate::{Custodian, disk, Lot, print, ShareCount, table};
 use crate::asset_tag::AssetTag;
-use crate::core::{DeepAsset, PotPath, Ramp};
+use crate::core::{AssetGroup, DeepAsset, into_groups, PotPath, Ramp};
 use crate::pot::{FolderPot, Pot};
+use crate::table::dollar_value::{DollarValueColumn, shorten_abs, shorten_dollars};
 use crate::table::percent::PercentColumn;
 use crate::table::Table;
 
@@ -225,6 +226,25 @@ fn println_uid(uid: u64) {
 	println!("{:016}", uid);
 }
 
+pub fn asset_values() -> Result<(), Box<dyn Error>> {
+	let mut names = Vec::new();
+	let mut values = Vec::new();
+	let pot = FolderPot::new();
+	let prices = fetch_prices(&pot)?;
+	let groups: Vec<AssetGroup> = into_groups(pot.read_deep_assets()?).into_iter().collect();
+	for group in groups {
+		names.insert(names.len(), group.tag.to_string());
+		values.insert(values.len(), group.market_value(&prices)?);
+	}
+	let asset_col = PlainColumn::from(&names);
+	let values_col = DollarValueColumn::new(&values);
+	let table = Table::new(vec![Box::new(asset_col), Box::new(values_col)]);
+	for i in 0..table.lines() {
+		println!("{}", table.printout(i))
+	}
+	Ok(())
+}
+
 pub fn value(verbose: bool) -> Result<(), Box<dyn Error>> {
 	let pot = FolderPot::new();
 	let prices = fetch_prices(&pot)?;
@@ -327,18 +347,6 @@ pub fn assets() -> Result<(), Box<dyn Error>> {
 	Ok(())
 }
 
-pub fn shorten_dollars(no: f64) -> String {
-	if no.is_nan() {
-		"$NAN".to_string()
-	} else if no == 0.0 {
-		"$0".to_string()
-	} else if no.is_sign_negative() {
-		format!("(${})", shorten_abs(no))
-	} else {
-		format!("${}", shorten_abs(no))
-	}
-}
-
 pub fn shorten_dollars_delta(no: f64) -> String {
 	if no.is_nan() {
 		"$NAN".to_string()
@@ -351,34 +359,6 @@ pub fn shorten_dollars_delta(no: f64) -> String {
 	}
 }
 
-fn shorten_abs(no: f64) -> String {
-	let pos = no.abs();
-	let quantity = if pos >= 1e12 {
-		"1.0T+".to_string()
-	} else {
-		let (short_pos, unit) = if pos >= 1e9 {
-			(pos / 1e9, "B")
-		} else if pos >= 1e6 {
-			(pos / 1e6, "M")
-		} else if pos >= 1e3 {
-			(pos / 1e3, "K")
-		} else {
-			(pos, "")
-		};
-		let s = format!("{:07.3}", short_pos);
-		let digits = if short_pos >= 100.0 {
-			&s[..3]
-		} else if short_pos >= 10.0 {
-			&s[1..5]
-		} else if short_pos >= 1.0 {
-			&s[2..6]
-		} else {
-			&s[3..]
-		};
-		format!("{}{}", digits, unit)
-	};
-	quantity
-}
 
 fn fetch_prices(pot: &impl Pot) -> Result<HashMap<AssetTag, f64>, Box<dyn Error>> {
 	let mut prices = HashMap::new();

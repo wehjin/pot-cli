@@ -35,8 +35,12 @@ fn main() -> Result<(), Box<dyn Error>> {
 	} else if let Some(_) = matches.subcommand_matches("status") {
 		cli::status()?;
 	} else if let Some(matches) = matches.subcommand_matches("value") {
-		let verbose = matches.is_present("verbose");
-		cli::value(verbose)?;
+		if matches.is_present("assets") {
+			cli::asset_values()?;
+		} else {
+			let verbose = matches.is_present("verbose");
+			cli::value(verbose)?;
+		}
 	} else if let Some(_) = matches.subcommand_matches("lots") {
 		cli::lots()?;
 	} else if let Some(_) = matches.subcommand_matches("assets") {
