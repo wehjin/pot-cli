@@ -231,7 +231,8 @@ pub fn asset_values() -> Result<(), Box<dyn Error>> {
 	let mut values = Vec::new();
 	let pot = FolderPot::new();
 	let prices = fetch_prices(&pot)?;
-	let groups: Vec<AssetGroup> = into_groups(pot.read_deep_assets()?).into_iter().collect();
+	let mut groups: Vec<AssetGroup> = into_groups(pot.read_deep_assets()?).into_iter().collect();
+	groups.sort_by_key(|it| it.tag.to_owned());
 	for group in groups {
 		names.insert(names.len(), group.tag.to_string());
 		values.insert(values.len(), group.market_value(&prices)?);
